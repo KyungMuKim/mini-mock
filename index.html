@@ -89,9 +89,12 @@ function saveDraft(){ try{ localStorage.setItem(draftKey(S.student.id), JSON.str
 function loadDraft(id){ try{ const r=localStorage.getItem(draftKey(id)); return r?JSON.parse(r):null; }catch(e){ return null; } }
 function clearDraft(id){ try{ localStorage.removeItem(draftKey(id)); }catch(e){} }
 const dstr = e => e.exam_date;   // 'YYYY-MM-DD'
+// 저장소 루트에 업로드된 회차(경로 예외)
+const ROOT_DATES = new Set(["2025-03-26","2025-06-04","2025-09-03","2025-10-14","2026-03-24","2026-06-04"]);
+const imgBase = d => ROOT_DATES.has(d) ? "" : CONFIG.IMG_BASE + "/";
 function imgTags(examDate, qno){
   const files = (EXAM_IMAGES[examDate]||{})[qno] || [];
-  return files.map(f=>`<img class="qimg" src="${CONFIG.IMG_BASE}/${examDate}/${f}" alt="${qno}번" loading="lazy">`).join("");
+  return files.map(f=>`<img class="qimg" src="${imgBase(examDate)}${examDate}/${f}" alt="${qno}번" loading="lazy">`).join("");
 }
 async function getExams(){
   if(EXAMS) return EXAMS;
@@ -384,7 +387,7 @@ window.dashStudentDetail = async function(student){
 window.showQ = function(examDate, qno){
   const w = window.open("", "_blank");
   w.document.write(`<body style="max-width:720px;margin:20px auto;font-family:sans-serif"><h3>${examDate} · ${qno}번</h3>` +
-    ((EXAM_IMAGES[examDate]||{})[qno]||[]).map(f=>`<img style="width:100%;border:1px solid #ddd;border-radius:8px;margin:6px 0" src="${location.href.replace(/[^/]*$/,"")}${CONFIG.IMG_BASE}/${examDate}/${f}">`).join("") + "</body>");
+    ((EXAM_IMAGES[examDate]||{})[qno]||[]).map(f=>`<img style="width:100%;border:1px solid #ddd;border-radius:8px;margin:6px 0" src="${location.href.replace(/[^/]*$/,"")}${imgBase(examDate)}${examDate}/${f}">`).join("") + "</body>");
 };
 
 /* ---- 탭4: 학부모 리포트 ---- */
