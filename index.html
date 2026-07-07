@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>미니모의고사</title>
+<meta name="robots" content="noindex, nofollow">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="exam_images.js"></script>
+<style>
+  :root{ --bg:#f4f6fb; --card:#fff; --ink:#1c2333; --sub:#68718a; --pri:#4f6ef7; --ok:#16a34a; --no:#dc2626; --line:#e5e9f2; --warn:#b45309; }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{font-family:'Apple SD Gothic Neo','Malgun Gothic',sans-serif; background:var(--bg); color:var(--ink); padding:16px; max-width:820px; margin:0 auto;}
+  .card{background:var(--card); border-radius:16px; padding:22px; box-shadow:0 2px 10px rgba(20,30,60,.06); margin-bottom:14px;}
+  h1{font-size:1.5rem; margin-bottom:6px;} h2{font-size:1.2rem; margin-bottom:8px;}
+  .sub{color:var(--sub); font-size:.9rem; margin-bottom:14px;}
+  .small{color:var(--sub); font-size:.8rem;}
+  .pill{background:#eef2ff; border-radius:10px; padding:12px 14px; font-size:.95rem; margin:10px 0; line-height:1.5;}
+  .btn-primary{background:var(--pri); color:#fff; border:none; border-radius:10px; padding:13px 22px; font-size:1.05rem; font-weight:700; cursor:pointer; width:100%;}
+  .btn-primary:disabled{opacity:.45; cursor:default;}
+  .btn-ghost{background:#eef1f8; color:var(--ink); border:none; border-radius:10px; padding:10px 16px; font-size:.95rem; cursor:pointer;}
+  .btn-sm{padding:6px 10px; font-size:.82rem; border-radius:8px;}
+  .row{display:flex; gap:8px; margin-top:12px; flex-wrap:wrap;}
+  .row .btn-primary{flex:1; width:auto;}
+  .student-btn{display:inline-block; background:#eef2ff; border:2px solid transparent; border-radius:12px; padding:14px 18px; margin:5px 4px; font-size:1.05rem; font-weight:700; cursor:pointer;}
+  .student-btn:active{border-color:var(--pri);}
+  .exam-btn{display:flex; justify-content:space-between; align-items:center; width:100%; background:#f7f9ff; border:2px solid var(--line); border-radius:12px; padding:13px 16px; margin:6px 0; font-size:.98rem; font-weight:700; cursor:pointer; text-align:left;}
+  .exam-btn .done{color:var(--ok); font-size:.85rem; font-weight:700;}
+  .progress{height:8px; background:var(--line); border-radius:4px; overflow:hidden; margin:8px 0 4px;}
+  .progress div{height:100%; background:var(--pri); transition:width .2s;}
+  table{width:100%; border-collapse:collapse; font-size:.9rem; margin-top:10px;}
+  th,td{padding:8px 6px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top;}
+  th{color:var(--sub); font-weight:600; font-size:.8rem;}
+  .ok{color:var(--ok); font-weight:800;} .no{color:var(--no); font-weight:800;}
+  .badge{font-size:.68rem; font-weight:700; border-radius:6px; padding:2px 7px; vertical-align:middle; margin-left:6px; background:#dbeafe; color:#1d4ed8;}
+  .score-big{font-size:2.2rem; font-weight:900; margin:10px 0;}
+  .tabs{display:flex; gap:6px; margin-bottom:14px; flex-wrap:wrap;}
+  .tab{flex:1; min-width:90px; text-align:center; padding:10px; border-radius:10px; background:#eef1f8; font-weight:700; font-size:.9rem; cursor:pointer;}
+  .tab.on{background:var(--pri); color:#fff;}
+  select{font-size:1rem; padding:10px; border:2px solid var(--line); border-radius:10px; background:#fff; max-width:100%;}
+  .flag{background:#f0fdf4; color:#166534; font-size:.82rem; border-radius:8px; padding:8px 10px; margin:8px 0;}
+  .flag.amber{background:#fffbeb; color:#92400e;}
+  .statbox{background:#f7f9ff; border:1px solid var(--line); border-radius:10px; padding:12px 14px; margin:10px 0; font-size:.9rem; line-height:1.7;}
+  .live{display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--ok); margin-right:6px; animation:pulse 1.5s infinite;}
+  @keyframes pulse{50%{opacity:.3}}
+  .qimg{width:100%; border:1px solid var(--line); border-radius:8px; background:#fff; display:block; margin:6px 0;}
+  .choices{display:flex; gap:8px; margin:14px 0; flex-wrap:wrap;}
+  .choice{flex:1; min-width:52px; padding:14px 0; font-size:1.25rem; font-weight:800; border:2px solid var(--line); border-radius:12px; background:#fff; cursor:pointer; text-align:center;}
+  .choice.sel{border-color:var(--pri); background:#eef2ff; color:var(--pri);}
+  .navgrid{display:grid; grid-template-columns:repeat(8,1fr); gap:6px; margin:10px 0;}
+  .navq{padding:8px 0; text-align:center; border-radius:8px; background:#eef1f8; font-weight:700; font-size:.85rem; cursor:pointer; border:2px solid transparent;}
+  .navq.answered{background:#dcfce7; color:#166534;}
+  .navq.cur{border-color:var(--pri);}
+  .bar{display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:8px;}
+  .oxgrid{display:grid; grid-template-columns:repeat(5,1fr); gap:6px; margin:10px 0;}
+  .oxcell{padding:9px 0; text-align:center; border-radius:8px; font-weight:800; font-size:.9rem;}
+  .oxcell.o{background:#dcfce7; color:#166534;} .oxcell.x{background:#fee2e2; color:#b91c1c;}
+  .copybox{white-space:pre-wrap; background:#f7f9ff; border:1px solid var(--line); border-radius:10px; padding:14px; font-size:.9rem; line-height:1.7; margin:10px 0;}
+  .att-row{cursor:pointer;} .att-row:active{background:#f0f4ff;}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+/* ================= 설정 (단어시험과 동일 Supabase 프로젝트) ================= */
+const CONFIG = {
+  SUPABASE_URL: "https://xtxuozcbeqruuigeijsz.supabase.co",
+  SUPABASE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh0eHVvemNiZXFydXVpZ2VpanN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMxNjI4MzMsImV4cCI6MjA5ODczODgzM30.kuHunWODG6_lv3JajIMmr6Xw7yEORy-Dixs-EB4sYaM",
+  TEACHER_PIN: "2580",
+  IMG_BASE: "img",                    // 문항 이미지 폴더
+  EXCLUDE_NAMES: ["실험용","실험","테스트","test","딘"],
+  RECENT_WARN_MIN: 30
+};
+const QLIST = [20,21,22,23,24,31,32,33,34,35,36,37,38,39,40];
+const QTYPE = {20:"주장",21:"함축의미",22:"요지",23:"주제",24:"제목",31:"빈칸",32:"빈칸",33:"빈칸",34:"빈칸",35:"무관문장",36:"순서",37:"순서",38:"문장삽입",39:"문장삽입",40:"요약"};
+const sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_KEY);
+const app = document.getElementById("app");
+let S = {};   // 학생 세션
+let T = {};   // 선생님 세션
+let EXAMS = null;
+
+/* ================= 공통 ================= */
+const esc = s => String(s??"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const CN = ["","①","②","③","④","⑤"];
+function err(e){ alert("오류: " + (e.message||e)); throw e; }
+const fmtDate = t => { const d=new Date(t); return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`; };
+const draftKey = id => "mock_draft_" + id;
+function saveDraft(){ try{ localStorage.setItem(draftKey(S.student.id), JSON.stringify({examId:S.exam.id, answers:S.answers, idx:S.idx, startedAt:S.startedAt})); }catch(e){} }
+function loadDraft(id){ try{ const r=localStorage.getItem(draftKey(id)); return r?JSON.parse(r):null; }catch(e){ return null; } }
+function clearDraft(id){ try{ localStorage.removeItem(draftKey(id)); }catch(e){} }
+const dstr = e => e.exam_date;   // 'YYYY-MM-DD'
+function imgTags(examDate, qno){
+  const files = (EXAM_IMAGES[examDate]||{})[qno] || [];
+  return files.map(f=>`<img class="qimg" src="${CONFIG.IMG_BASE}/${examDate}/${f}" alt="${qno}번" loading="lazy">`).join("");
+}
+async function getExams(){
+  if(EXAMS) return EXAMS;
+  const { data, error } = await sb.from("mock_exams").select("*").eq("active", true).order("ord", {ascending:false});
+  if(error) err(error);
+  EXAMS = data; return data;
+}
+
+/* ================= 학생: 홈 ================= */
+async function home(){
+  app.innerHTML = `<div class="card"><h1>미니모의고사 📘</h1><div class="sub">불러오는 중...</div></div>`;
+  const { data: students, error } = await sb.from("students").select("*").eq("active", true).order("name");
+  if(error) err(error);
+  app.innerHTML = `
+   <div class="card">
+     <h1>미니모의고사 📘</h1>
+     <div class="sub">고1 영어 학평 기출 (20~24번, 31~40번 · 15문항) — 이름을 선택하세요</div>
+     ${students.map(s=>`<button class="student-btn" onclick='pickStudent(${JSON.stringify(s)})'>${esc(s.name)}</button>`).join("") || '<div class="pill">등록된 학생이 없어요. 선생님 모드에서 학생을 추가하세요.</div>'}
+     <div class="row"><button class="btn-ghost btn-sm" onclick="teacherLogin()">🔑 선생님</button></div>
+   </div>`;
+}
+
+window.pickStudent = function(student){
+  const d = loadDraft(student.id);
+  app.innerHTML = `
+   <div class="card">
+     <h2>본인 확인</h2>
+     <div class="sub">아래 이름이 <b>본인</b>이 맞는지 꼭 확인하세요.</div>
+     <div style="font-size:2.2rem; font-weight:900; text-align:center; margin:14px 0">${esc(student.name)}</div>
+     ${d?`<div class="flag amber">💾 진행하던 시험이 남아있어요. 이어서 볼 수 있어요.</div>`:""}
+     <div class="row"><button class="btn-primary" onclick='examList(${JSON.stringify(student)})'>네, ${esc(student.name)} 입니다 →</button></div>
+     ${d?`<div class="row"><button class="btn-ghost" onclick='resumeDraft(${JSON.stringify(student)})'>💾 진행하던 시험 이어서 하기</button></div>`:""}
+     <div class="row"><button class="btn-ghost btn-sm" onclick="home()">← 아니에요, 이름 다시 선택</button></div>
+   </div>`;
+};
+
+window.resumeDraft = async function(student){
+  const d = loadDraft(student.id);
+  if(!d){ examList(student); return; }
+  const exams = await getExams();
+  const exam = exams.find(e=>e.id===d.examId);
+  if(!exam){ clearDraft(student.id); examList(student); return; }
+  S = { student, exam, answers:d.answers, idx:d.idx||0, startedAt:d.startedAt||Date.now() };
+  question();
+};
+
+/* ================= 학생: 회차 선택 ================= */
+window.examList = async function(student){
+  app.innerHTML = `<div class="card"><h2>${esc(student.name)}</h2><div class="sub">회차 불러오는 중...</div></div>`;
+  const exams = await getExams();
+  const { data: atts, error } = await sb.from("mock_attempts").select("exam_id, score, total, taken_at").eq("student_id", student.id).order("taken_at");
+  if(error) err(error);
+  const done = {};
+  (atts||[]).forEach(a=>{ if(!(a.exam_id in done)) done[a.exam_id]=a; });
+  const last = (atts||[])[atts.length-1];
+  const warn = last && (Date.now()-new Date(last.taken_at) < CONFIG.RECENT_WARN_MIN*60000)
+    ? `<div class="flag amber">⚠️ 방금 전(${fmtDate(last.taken_at)})에 응시한 기록이 있어요. 본인이 맞는지 확인하세요.</div>` : "";
+  app.innerHTML = `
+   <div class="card">
+     <h2>${esc(student.name)}</h2>
+     <div class="sub">응시할 회차를 선택하세요 · 완료 ${Object.keys(done).length}/${exams.length}</div>
+     ${warn}
+     ${exams.map(e=>{
+        const d = done[e.id];
+        return `<button class="exam-btn" onclick='examConfirm(${JSON.stringify(student)}, ${e.id})'>
+          <span>${e.ord}회 · ${esc(e.label)}</span>
+          <span class="${d?"done":"small"}">${d?`✅ ${d.score}/${d.total}`:"미응시"}</span></button>`;
+      }).join("")}
+     <div class="row"><button class="btn-ghost btn-sm" onclick="home()">← 이름 다시 선택</button></div>
+   </div>`;
+};
+
+window.examConfirm = async function(student, examId){
+  const exams = await getExams();
+  const exam = exams.find(e=>e.id===examId);
+  const { count } = await sb.from("mock_attempts").select("id", {count:"exact", head:true}).eq("student_id", student.id).eq("exam_id", examId);
+  app.innerHTML = `
+   <div class="card">
+     <h2>${exam.ord}회 · ${esc(exam.label)}</h2>
+     <div class="pill">유형별 15문항 — <b>20~24번</b> (주장·함축·요지·주제·제목) + <b>31~40번</b> (빈칸·무관·순서·삽입·요약)<br>
+     <span class="small">권장 시간 약 25분 · 제출하면 바로 채점돼요.</span></div>
+     ${count?`<div class="flag amber">이미 ${count}회 응시했어요. 다시 풀면 기록은 남지만 통계에는 <b>첫 응시</b>가 반영돼요.</div>`:""}
+     <div class="row"><button class="btn-primary" onclick='startExam(${JSON.stringify(student)}, ${examId})'>시험 시작</button></div>
+     <div class="row"><button class="btn-ghost btn-sm" onclick='examList(${JSON.stringify(student)})'>← 회차 다시 선택</button></div>
+   </div>`;
+};
+
+window.startExam = async function(student, examId){
+  const exams = await getExams();
+  const exam = exams.find(e=>e.id===examId);
+  S = { student, exam, answers:Object.fromEntries(QLIST.map(q=>[q,0])), idx:0, startedAt:Date.now() };
+  saveDraft();
+  question();
+};
+
+/* ================= 학생: 문항 화면 ================= */
+function question(){
+  const i = S.idx, qno = QLIST[i], total = QLIST.length;
+  const answered = QLIST.filter(q=>S.answers[q]>0).length;
+  const mins = Math.floor((Date.now()-S.startedAt)/60000);
+  app.innerHTML = `
+   <div class="card">
+     <div class="bar">
+       <b>${S.exam.ord}회 · ${qno}번 <span class="badge">${QTYPE[qno]}</span></b>
+       <span class="small">${answered}/${total} 응답 · ${mins}분 경과</span>
+     </div>
+     <div class="progress"><div style="width:${(answered/total*100).toFixed(0)}%"></div></div>
+     <div class="navgrid">${QLIST.map((q,j)=>`<div class="navq ${S.answers[q]>0?"answered":""} ${j===i?"cur":""}" onclick="goQ(${j})">${q}</div>`).join("")}</div>
+     ${imgTags(dstr(S.exam), qno)}
+     <div class="choices">${[1,2,3,4,5].map(c=>`<button class="choice ${S.answers[qno]===c?"sel":""}" onclick="pickAns(${qno},${c})">${CN[c]}</button>`).join("")}</div>
+     <div class="row">
+       <button class="btn-ghost" onclick="goQ(${i-1})" ${i===0?"disabled":""}>← 이전</button>
+       ${i<total-1
+         ? `<button class="btn-primary" onclick="goQ(${i+1})">다음 →</button>`
+         : `<button class="btn-primary" onclick="submitExam()">제출하기 ✅</button>`}
+     </div>
+     <div class="row"><button class="btn-ghost btn-sm" onclick="quitExam()">중단 (임시저장)</button></div>
+   </div>`;
+  window.scrollTo(0,0);
+}
+window.goQ = function(j){ if(j<0||j>=QLIST.length) return; S.idx=j; saveDraft(); question(); };
+window.pickAns = function(qno,c){ S.answers[qno]=c; saveDraft(); const i=S.idx; if(i<QLIST.length-1){ S.idx=i+1; } question(); };
+window.quitExam = function(){ saveDraft(); alert("임시저장 됐어요. 다음에 이름을 누르면 이어서 볼 수 있어요."); home(); };
+
+/* ================= 학생: 제출/채점 ================= */
+window.submitExam = async function(){
+  const blank = QLIST.filter(q=>!S.answers[q]);
+  if(blank.length && !confirm(`아직 안 푼 문항이 있어요: ${blank.join(", ")}번\n그래도 제출할까요? (무응답은 오답 처리)`)) return;
+  app.innerHTML = `<div class="card"><h2>채점 중...</h2></div>`;
+  const key = S.exam.answers;
+  let score = 0;
+  const items = QLIST.map((q,j)=>{
+    const a = S.answers[q]||null;
+    const ok = a === Number(key[q]);
+    if(ok) score++;
+    return { exam_id:S.exam.id, question_no:q, qtype:QTYPE[q], answer:a, correct:ok, seq:j };
+  });
+  const dur = Math.round((Date.now()-S.startedAt)/1000);
+  const { data: att, error } = await sb.from("mock_attempts")
+    .insert({ student_id:S.student.id, exam_id:S.exam.id, score, total:QLIST.length, duration_sec:dur })
+    .select().single();
+  if(error) err(error);
+  const { error: e2 } = await sb.from("mock_attempt_items").insert(items.map(it=>({ ...it, attempt_id:att.id })));
+  if(e2) err(e2);
+  clearDraft(S.student.id);
+  resultScreen(att, items);
+};
+
+function resultScreen(att, items){
+  const key = S.exam.answers;
+  const wrong = items.filter(it=>!it.correct);
+  app.innerHTML = `
+   <div class="card">
+     <h2>${esc(S.student.name)} · ${S.exam.ord}회 결과</h2>
+     <div class="score-big">${att.score} / ${att.total}</div>
+     <div class="sub">${esc(S.exam.label)} · ${Math.floor(att.duration_sec/60)}분 ${att.duration_sec%60}초</div>
+     <div class="oxgrid">${items.map(it=>`<div class="oxcell ${it.correct?"o":"x"}">${it.question_no} ${it.correct?"○":"✕"}</div>`).join("")}</div>
+     ${wrong.length ? `<h2 style="margin-top:16px">오답 다시 보기 (${wrong.length}문항)</h2>
+       ${wrong.map(it=>`
+         <div class="pill"><b>${it.question_no}번</b> <span class="badge">${it.qtype}</span> — 내 답: <span class="no">${it.answer?CN[it.answer]:"무응답"}</span> · 정답: <span class="ok">${CN[Number(key[it.question_no])]}</span></div>
+         ${imgTags(dstr(S.exam), it.question_no)}`).join("")}`
+       : `<div class="flag">🎉 전부 맞았어요! 완벽해요.</div>`}
+     <div class="row"><button class="btn-primary" onclick='examList(${JSON.stringify(S.student)})'>다른 회차 풀기</button></div>
+     <div class="row"><button class="btn-ghost btn-sm" onclick="home()">처음으로</button></div>
+   </div>`;
+  window.scrollTo(0,0);
+}
+
+/* ================= 선생님 ================= */
+window.teacherLogin = function(){
+  const pin = prompt("선생님 비밀번호");
+  if(pin !== CONFIG.TEACHER_PIN){ if(pin!==null) alert("비밀번호가 달라요"); return; }
+  T = { tab:"live" };
+  sb.channel("mock_dash")
+    .on("postgres_changes",{event:"*",schema:"public",table:"mock_attempts"}, ()=>{ if(T.tab==="live") dashLive(); })
+    .subscribe();
+  dashLive();
+};
+function dashShell(inner){
+  app.innerHTML = `
+   <div class="card">
+     <div class="bar"><h1>선생님 대시보드</h1><button class="btn-ghost btn-sm" onclick="home()">나가기</button></div>
+     <div class="tabs">
+       <div class="tab ${T.tab==="live"?"on":""}" onclick="dashLive()">📡 실시간</div>
+       <div class="tab ${T.tab==="exam"?"on":""}" onclick="dashExam()">📊 회차 통계</div>
+       <div class="tab ${T.tab==="students"?"on":""}" onclick="dashStudents()">👥 학생</div>
+       <div class="tab ${T.tab==="report"?"on":""}" onclick="dashReport()">📨 학부모 리포트</div>
+     </div>
+     ${inner}
+   </div>`;
+}
+const isExcluded = name => CONFIG.EXCLUDE_NAMES.includes((name||"").trim());
+
+/* ---- 탭1: 실시간 ---- */
+window.dashLive = async function(){
+  T.tab="live";
+  const { data, error } = await sb.from("mock_attempts")
+    .select("*, students(name), mock_exams(ord,label)").order("taken_at",{ascending:false}).limit(30);
+  if(error) err(error);
+  const rows = (data||[]).map(a=>`<tr>
+    <td>${fmtDate(a.taken_at)}</td><td><b>${esc(a.students?.name)}</b></td>
+    <td>${a.mock_exams?.ord}회 ${esc(a.mock_exams?.label||"")}</td>
+    <td><b>${a.score}</b>/${a.total}</td><td>${a.duration_sec?Math.round(a.duration_sec/60)+"분":""}</td></tr>`).join("");
+  dashShell(`<h2><span class="live"></span>최근 응시</h2>
+    <table><tr><th>시각</th><th>학생</th><th>회차</th><th>점수</th><th>시간</th></tr>${rows||"<tr><td colspan=5>아직 응시 기록이 없어요</td></tr>"}</table>`);
+};
+
+/* ---- 탭2: 회차 통계 (해설강의 준비용) ---- */
+window.dashExam = async function(examId){
+  T.tab="exam";
+  const exams = await getExams();
+  examId = examId || T.examId || exams[0]?.id;
+  T.examId = examId;
+  const sel = `<select onchange="dashExam(Number(this.value))">${exams.map(e=>`<option value="${e.id}" ${e.id===examId?"selected":""}>${e.ord}회 · ${esc(e.label)}</option>`).join("")}</select>`;
+  const exam = exams.find(e=>e.id===examId);
+  if(!exam){ dashShell(`<h2>회차 통계</h2>${sel}<div class="pill">회차 없음</div>`); return; }
+  const { data: atts, error } = await sb.from("mock_attempts").select("id, student_id, score, total, taken_at, students(name)").eq("exam_id", examId).order("taken_at");
+  if(error) err(error);
+  // 학생별 첫 응시만
+  const firstBy = {};
+  (atts||[]).filter(a=>!isExcluded(a.students?.name)).forEach(a=>{ if(!(a.student_id in firstBy)) firstBy[a.student_id]=a; });
+  const first = Object.values(firstBy);
+  const attIds = first.map(a=>a.id);
+  let itemStats = "";
+  if(attIds.length){
+    const { data: items, error: e2 } = await sb.from("mock_attempt_items").select("attempt_id, question_no, qtype, answer, correct").in("attempt_id", attIds);
+    if(e2) err(e2);
+    const byQ = {};
+    QLIST.forEach(q=>byQ[q]={n:0, wrong:0, dist:[0,0,0,0,0,0]});
+    (items||[]).forEach(it=>{ const b=byQ[it.question_no]; if(!b) return; b.n++; if(!it.correct) b.wrong++; if(it.answer) b.dist[it.answer]++; });
+    const sorted = [...QLIST].sort((a,b)=>(byQ[b].wrong/(byQ[b].n||1))-(byQ[a].wrong/(byQ[a].n||1)));
+    itemStats = `<h2 style="margin-top:16px">문항별 오답률 <span class="small">(오답률 순 — 해설강의 우선순위)</span></h2>
+      <table><tr><th>문항</th><th>유형</th><th>정답</th><th>오답률</th><th>선지 분포 ①~⑤</th></tr>
+      ${sorted.map(q=>{ const b=byQ[q]; const r=b.n?Math.round(b.wrong/b.n*100):0;
+        return `<tr><td><b>${q}</b></td><td>${QTYPE[q]}</td><td>${CN[Number(exam.answers[q])]}</td>
+          <td class="${r>=50?"no":""}">${r}% (${b.wrong}/${b.n})</td>
+          <td class="small">${[1,2,3,4,5].map(c=>`${CN[c]}${b.dist[c]}`).join(" ")}</td></tr>`; }).join("")}</table>`;
+  }
+  const avg = first.length ? (first.reduce((s,a)=>s+a.score,0)/first.length).toFixed(1) : "-";
+  dashShell(`<h2>회차 통계</h2><div class="row" style="margin-bottom:8px">${sel}</div>
+    <div class="statbox">응시 <b>${first.length}명</b> · 평균 <b>${avg}</b>/15</div>
+    <table><tr><th>학생</th><th>점수</th><th>응시 시각</th></tr>
+    ${first.sort((a,b)=>b.score-a.score).map(a=>`<tr><td>${esc(a.students?.name)}</td><td><b>${a.score}</b>/${a.total}</td><td>${fmtDate(a.taken_at)}</td></tr>`).join("") || "<tr><td colspan=3>응시 없음</td></tr>"}</table>
+    ${itemStats}`);
+};
+
+/* ---- 탭3: 학생 (오답 풀) ---- */
+window.dashStudents = async function(){
+  T.tab="students";
+  const { data: students, error } = await sb.from("students").select("*").eq("active",true).order("name");
+  if(error) err(error);
+  dashShell(`<h2>학생별 현황 · 오답 풀</h2>
+    ${students.map(s=>`<button class="student-btn" onclick='dashStudentDetail(${JSON.stringify(s)})'>${esc(s.name)}</button>`).join("")}`);
+};
+window.dashStudentDetail = async function(student){
+  T.tab="students";
+  const exams = await getExams();
+  const byId = Object.fromEntries(exams.map(e=>[e.id,e]));
+  const { data: atts, error } = await sb.from("mock_attempts").select("*").eq("student_id", student.id).order("taken_at");
+  if(error) err(error);
+  const attIds = (atts||[]).map(a=>a.id);
+  let items = [];
+  if(attIds.length){
+    const { data, error: e2 } = await sb.from("mock_attempt_items").select("*").in("attempt_id", attIds);
+    if(e2) err(e2); items = data||[];
+  }
+  // 유형별 정답률
+  const byType = {};
+  items.forEach(it=>{ const t=byType[it.qtype]=byType[it.qtype]||{n:0,ok:0}; t.n++; if(it.correct) t.ok++; });
+  const typeRows = Object.entries(byType).sort((a,b)=>(a[1].ok/a[1].n)-(b[1].ok/b[1].n))
+    .map(([t,v])=>`<tr><td>${t}</td><td class="${v.ok/v.n<0.5?"no":""}">${Math.round(v.ok/v.n*100)}%</td><td class="small">${v.ok}/${v.n}</td></tr>`).join("");
+  // 오답 풀
+  const wrongs = items.filter(it=>!it.correct);
+  const wrongRows = wrongs.sort((a,b)=>(byId[a.exam_id]?.ord||0)-(byId[b.exam_id]?.ord||0))
+    .map(it=>{ const e=byId[it.exam_id];
+      return `<tr><td>${e?e.ord+"회":""}</td><td><b>${it.question_no}</b></td><td>${it.qtype}</td>
+      <td>${it.answer?CN[it.answer]:"무응답"} → <span class="ok">${e?CN[Number(e.answers[it.question_no])]:""}</span></td>
+      <td><button class="btn-ghost btn-sm" onclick='showQ("${e?dstr(e):""}",${it.question_no})'>보기</button></td></tr>`; }).join("");
+  dashShell(`<h2>${esc(student.name)}</h2>
+    <div class="statbox">응시 <b>${(atts||[]).length}회</b> · 평균 <b>${(atts||[]).length?( (atts.reduce((s,a)=>s+a.score,0)/atts.length).toFixed(1)):"-"}</b>/15 · 누적 오답 <b>${wrongs.length}</b>문항</div>
+    <h2>회차별 점수</h2>
+    <table><tr><th>회차</th><th>점수</th><th>시각</th></tr>
+    ${(atts||[]).map(a=>{const e=byId[a.exam_id]; return `<tr><td>${e?e.ord+"회 · "+esc(e.label):""}</td><td><b>${a.score}</b>/${a.total}</td><td>${fmtDate(a.taken_at)}</td></tr>`;}).join("")||"<tr><td colspan=3>응시 없음</td></tr>"}</table>
+    <h2 style="margin-top:16px">유형별 정답률 <span class="small">(낮은 순)</span></h2>
+    <table><tr><th>유형</th><th>정답률</th><th>맞음/전체</th></tr>${typeRows||"<tr><td colspan=3>-</td></tr>"}</table>
+    <h2 style="margin-top:16px">오답 풀 (누적)</h2>
+    <table><tr><th>회차</th><th>문항</th><th>유형</th><th>내 답 → 정답</th><th></th></tr>${wrongRows||"<tr><td colspan=5>오답 없음 🎉</td></tr>"}</table>
+    <div class="row"><button class="btn-ghost btn-sm" onclick="dashStudents()">← 학생 목록</button></div>`);
+};
+window.showQ = function(examDate, qno){
+  const w = window.open("", "_blank");
+  w.document.write(`<body style="max-width:720px;margin:20px auto;font-family:sans-serif"><h3>${examDate} · ${qno}번</h3>` +
+    ((EXAM_IMAGES[examDate]||{})[qno]||[]).map(f=>`<img style="width:100%;border:1px solid #ddd;border-radius:8px;margin:6px 0" src="${location.href.replace(/[^/]*$/,"")}${CONFIG.IMG_BASE}/${examDate}/${f}">`).join("") + "</body>");
+};
+
+/* ---- 탭4: 학부모 리포트 ---- */
+window.dashReport = async function(studentId){
+  T.tab="report";
+  const { data: students, error } = await sb.from("students").select("*").eq("active",true).order("name");
+  if(error) err(error);
+  const sel = `<select onchange="dashReport(this.value)"><option value="">학생 선택...</option>
+    ${students.filter(s=>!isExcluded(s.name)).map(s=>`<option value="${s.id}" ${s.id===studentId?"selected":""}>${esc(s.name)}</option>`).join("")}</select>`;
+  if(!studentId){ dashShell(`<h2>학부모 리포트</h2><div class="row">${sel}</div>`); return; }
+  const student = students.find(s=>s.id===studentId);
+  const exams = await getExams();
+  const byId = Object.fromEntries(exams.map(e=>[e.id,e]));
+  const { data: atts } = await sb.from("mock_attempts").select("*").eq("student_id", studentId).order("taken_at");
+  const attIds = (atts||[]).map(a=>a.id);
+  let items = [];
+  if(attIds.length){ const { data } = await sb.from("mock_attempt_items").select("*").in("attempt_id", attIds); items = data||[]; }
+  // 반 평균 (전 학생 첫 응시 기준)
+  const { data: allAtts } = await sb.from("mock_attempts").select("student_id, exam_id, score, taken_at, students(name)").order("taken_at");
+  const firstAll = {};
+  (allAtts||[]).filter(a=>!isExcluded(a.students?.name)).forEach(a=>{ const k=a.student_id+"_"+a.exam_id; if(!(k in firstAll)) firstAll[k]=a.score; });
+  const classAvg = Object.values(firstAll).length ? (Object.values(firstAll).reduce((s,v)=>s+v,0)/Object.values(firstAll).length).toFixed(1) : "-";
+  const byType = {};
+  items.forEach(it=>{ const t=byType[it.qtype]=byType[it.qtype]||{n:0,ok:0}; t.n++; if(it.correct) t.ok++; });
+  const weak = Object.entries(byType).filter(([,v])=>v.n>=3).sort((a,b)=>(a[1].ok/a[1].n)-(b[1].ok/b[1].n)).slice(0,3);
+  const recent = (atts||[]).slice(-3);
+  const wrongs = items.filter(it=>!it.correct).length;
+  const myAvg = (atts||[]).length ? (atts.reduce((s,a)=>s+a.score,0)/atts.length).toFixed(1) : "-";
+  const today = new Date();
+  const txt =
+`[영어 미니모의고사 리포트] ${student.name}
+(${today.getFullYear()}.${today.getMonth()+1}.${today.getDate()} 기준)
+
+■ 응시 현황: 총 ${(atts||[]).length}회 응시
+■ 최근 성적: ${recent.map(a=>{const e=byId[a.exam_id]; return `${e?e.ord+"회":""} ${a.score}/15`;}).join(", ")||"응시 없음"}
+■ 평균: ${myAvg}/15 (반 평균 ${classAvg}/15)
+■ 보완이 필요한 유형: ${weak.map(([t,v])=>`${t}(정답률 ${Math.round(v.ok/v.n*100)}%)`).join(", ")||"데이터 부족"}
+■ 누적 오답: ${wrongs}문항 → 오답 문항은 해설강의와 복습 세트로 관리하고 있습니다.
+
+꾸준히 응시하면 유형별 약점이 데이터로 쌓여 맞춤 보완이 가능합니다. 궁금한 점은 언제든 연락 주세요!`;
+  dashShell(`<h2>학부모 리포트</h2><div class="row" style="margin-bottom:8px">${sel}</div>
+    <div class="copybox" id="rpt">${esc(txt)}</div>
+    <div class="row"><button class="btn-primary" onclick="navigator.clipboard.writeText(document.getElementById('rpt').innerText).then(()=>alert('복사 완료! 문자/카톡에 붙여넣으세요.'))">📋 복사하기</button></div>`);
+};
+
+home();
+</script>
+</body>
+</html>
