@@ -122,13 +122,37 @@ window.pickStudent = function(student){
   app.innerHTML = `
    <div class="card">
      <h2>본인 확인</h2>
-     <div class="sub">아래 이름이 <b>본인</b>이 맞는지 꼭 확인하세요.</div>
+     <div class="sub">아래 이름이 <b>본인</b>이 맞는지 확인하고, <b>비밀번호 4자리</b>를 입력하세요.</div>
      <div style="font-size:2.2rem; font-weight:900; text-align:center; margin:14px 0">${esc(student.name)}</div>
+     <div class="row" style="justify-content:center">
+       <input type="password" id="pinInput" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off"
+         placeholder="비밀번호 4자리" style="text-align:center; font-size:1.3rem; letter-spacing:.35em; width:190px; padding:10px; border:2px solid #cbd5e1; border-radius:10px">
+     </div>
      ${d?`<div class="flag amber">💾 진행하던 시험이 남아있어요. 이어서 볼 수 있어요.</div>`:""}
-     <div class="row"><button class="btn-primary" onclick='examList(${JSON.stringify(student)})'>네, ${esc(student.name)} 입니다 →</button></div>
-     ${d?`<div class="row"><button class="btn-ghost" onclick='resumeDraft(${JSON.stringify(student)})'>💾 진행하던 시험 이어서 하기</button></div>`:""}
+     <div class="row"><button class="btn-primary" onclick='pinGo(${JSON.stringify(student)}, false)'>네, ${esc(student.name)} 입니다 →</button></div>
+     ${d?`<div class="row"><button class="btn-ghost" onclick='pinGo(${JSON.stringify(student)}, true)'>💾 진행하던 시험 이어서 하기</button></div>`:""}
      <div class="row"><button class="btn-ghost btn-sm" onclick="home()">← 아니에요, 이름 다시 선택</button></div>
    </div>`;
+  const inp = document.getElementById("pinInput");
+  inp.focus();
+  inp.addEventListener("keydown", e=>{ if(e.key==="Enter") pinGo(student, false); });
+};
+
+/* PIN 검증 후 진행 (비밀번호는 서버에서만 대조 — 화면/코드에 노출 안 됨) */
+window.pinGo = async function(student, resume){
+  const inp = document.getElementById("pinInput");
+  const pin = (inp && inp.value || "").trim();
+  if(!/^\d{4}$/.test(pin)){ alert("비밀번호 4자리(숫자)를 입력하세요"); if(inp) inp.focus(); return; }
+  const btns = document.querySelectorAll("button");
+  btns.forEach(b=>b.disabled=true);
+  const { data: ok, error } = await sb.rpc("student_pin_verify", { p_student_id: student.id, p_pin: pin });
+  if(error){ btns.forEach(b=>b.disabled=false); return alert("오류: "+error.message); }
+  if(!ok){
+    btns.forEach(b=>b.disabled=false);
+    if(inp){ inp.value=""; inp.focus(); }
+    return alert("비밀번호가 달라요. 본인 이름이 맞는지, 비밀번호를 다시 확인하세요.");
+  }
+  resume ? resumeDraft(student) : examList(student);
 };
 
 window.resumeDraft = async function(student){
