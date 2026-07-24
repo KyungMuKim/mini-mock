@@ -66,7 +66,7 @@
 const CONFIG = {
   SUPABASE_URL: "https://xtxuozcbeqruuigeijsz.supabase.co",
   SUPABASE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh0eHVvemNiZXFydXVpZ2VpanN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMxNjI4MzMsImV4cCI6MjA5ODczODgzM30.kuHunWODG6_lv3JajIMmr6Xw7yEORy-Dixs-EB4sYaM",
-  TEACHER_PIN: "2580",
+  TEACHER_PIN: "5204",
   IMG_BASE: "img",                    // 문항 이미지 폴더
   EXCLUDE_NAMES: ["실험용","실험","테스트","test","딘","안성민"],
   RECENT_WARN_MIN: 30
@@ -106,7 +106,8 @@ async function getExams(){
 /* ================= 학생: 홈 ================= */
 async function home(){
   app.innerHTML = `<div class="card"><h1>미니모의고사 📘</h1><div class="sub">불러오는 중...</div></div>`;
-  const { data: students, error } = await sb.from("students").select("*").eq("active", true).order("name");
+  let { data: students, error } = await sb.from("students").select("*").eq("active", true).neq("track","interview").order("name");
+  if(error) ({ data: students, error } = await sb.from("students").select("*").eq("active", true).order("name"));
   if(error) err(error);
   app.innerHTML = `
    <div class="card">
@@ -287,10 +288,34 @@ function resultScreen(att, items){
   window.scrollTo(0,0);
 }
 
+
+/* 비밀번호 입력(마스킹) 모달 — prompt() 대체 */
+function askPin(label){
+  return new Promise(res=>{
+    const ov = document.createElement("div");
+    ov.style.cssText = "position:fixed;inset:0;background:rgba(15,23,42,.55);display:flex;align-items:center;justify-content:center;z-index:9999";
+    ov.innerHTML = `<div style="background:#fff;border-radius:16px;padding:24px;width:280px;box-shadow:0 10px 40px rgba(0,0,0,.25)">
+      <div style="font-weight:800;margin-bottom:10px">${label}</div>
+      <input id="_pinAsk" type="password" inputmode="numeric" maxlength="4" autocomplete="off"
+        style="width:100%;text-align:center;font-size:1.3rem;letter-spacing:.35em;padding:10px;border:2px solid #cbd5e1;border-radius:10px;box-sizing:border-box">
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <button id="_pinCancel" style="flex:1;background:#eef1f8;border:none;border-radius:10px;padding:11px;font-size:.95rem;cursor:pointer">취소</button>
+        <button id="_pinOk" style="flex:1;background:#4f6ef7;color:#fff;border:none;border-radius:10px;padding:11px;font-weight:700;font-size:.95rem;cursor:pointer">확인</button>
+      </div></div>`;
+    document.body.appendChild(ov);
+    const inp = ov.querySelector("#_pinAsk");
+    const done = v => { ov.remove(); res(v); };
+    ov.querySelector("#_pinOk").onclick = ()=>done(inp.value.trim());
+    ov.querySelector("#_pinCancel").onclick = ()=>done(null);
+    inp.addEventListener("keydown", e=>{ if(e.key==="Enter") done(inp.value.trim()); });
+    inp.focus();
+  });
+}
 /* ================= 선생님 ================= */
-window.teacherLogin = function(){
-  const pin = prompt("선생님 비밀번호");
-  if(pin !== CONFIG.TEACHER_PIN){ if(pin!==null) alert("비밀번호가 달라요"); return; }
+window.teacherLogin = async function(){
+  const pin = await askPin("선생님 비밀번호");
+  if(pin === null) return;
+  if(pin !== CONFIG.TEACHER_PIN){ return alert("비밀번호가 달라요"); }
   T = { tab:"live" };
   sb.channel("mock_dash")
     .on("postgres_changes",{event:"*",schema:"public",table:"mock_attempts"}, ()=>{ if(T.tab==="live") dashLive(); })
