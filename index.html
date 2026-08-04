@@ -124,8 +124,7 @@ async function getAllExams(){
 /* ================= 학생: 홈 ================= */
 async function home(){
   app.innerHTML = `<div class="card"><h1>미니모의고사 📘</h1><div class="sub">불러오는 중...</div></div>`;
-  let { data: students, error } = await sb.from("students").select("*").eq("active", true).neq("track","interview").order("name");
-  if(error) ({ data: students, error } = await sb.from("students").select("*").eq("active", true).order("name"));
+  let { data: students, error } = await sb.from("students").select("*").eq("active", true).order("name");
   if(error) err(error);
   app.innerHTML = `
    <div class="card">
