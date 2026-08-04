@@ -187,7 +187,8 @@ window.resumeDraft = async function(student){
 
 /* ================= 학생: 회차 선택 ================= */
 window.examList = async function(student, grade){
-  if(grade) setGrade(grade);
+  const lockG = Number(student.grade) || 0;
+  if(lockG) setGrade(lockG); else if(grade) setGrade(grade);
   window.__stu = student;
   app.innerHTML = `<div class="card"><h2>${esc(student.name)}</h2><div class="sub">회차 불러오는 중...</div></div>`;
   const exams = await getExams();
@@ -202,7 +203,7 @@ window.examList = async function(student, grade){
    <div class="card">
      <h2>${esc(student.name)}</h2>
      <div class="sub">학년을 고르고, 응시할 회차를 선택하세요 · ${gname(GRADE)} 완료 ${Object.keys(done).length}/${exams.length}</div>
-     ${gradeTabs(GRADE, "examListG")}
+     ${lockG ? `<div class="pill">${gname(GRADE)} 과정</div>` : gradeTabs(GRADE, "examListG")}
      ${warn}
      ${exams.map(e=>{
         const d = done[e.id];
