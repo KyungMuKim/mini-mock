@@ -149,8 +149,16 @@ async function getExams(grade, subj){
   subj = subj || SUBJ;
   const k = subj + "_" + grade;
   if(EXAMS_CACHE[k]) return EXAMS_CACHE[k];
-  const { data, error } = await sb.from("mock_exams").select("*").eq("active", true).eq("grade", grade).eq("subject", subj).order("ord", {ascending:false});
+  let { data, error } = await sb.from("mock_exams").select("*").eq("active", true).eq("grade", grade).eq("subject", subj).order("ord", {ascending:false});
+  if(error && /subject/i.test(error.message||"")){
+    /* subject 컬럼 마이그레이션 전 안전장치: 전부 영어로 간주 */
+    const r2 = await sb.from("mock_exams").select("*").eq("active", true).eq("grade", grade).order("ord", {ascending:false});
+    if(r2.error) err(r2.error);
+    data = (r2.data||[]).map(e=>({...e, subject:"eng"})).filter(()=> subj==="eng");
+    error = null;
+  }
   if(error) err(error);
+  data = (data||[]).map(e=>({...e, subject: e.subject || "eng"}));
   EXAMS_CACHE[k] = data; return data;
 }
 async function getAllExams(){
