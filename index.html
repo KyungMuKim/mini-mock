@@ -70,7 +70,7 @@ const CONFIG = {
   SUPABASE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh0eHVvemNiZXFydXVpZ2VpanN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMxNjI4MzMsImV4cCI6MjA5ODczODgzM30.kuHunWODG6_lv3JajIMmr6Xw7yEORy-Dixs-EB4sYaM",
   IMG_BASE: "img",                    // 고1 문항 이미지 폴더
   IMG_BASE_GO3: "img3",               // 고3 영어 문항 이미지 폴더
-  IMG_BASE_KOR: "imgk",               // 국어 비문학 세트 이미지 폴더
+  IMG_BASE_KOR: "imgk",               // 국어 지문 세트 이미지 폴더 (비문학+문학)
   /* 반 통계에서 제외할 계정. 김준엽·신지환은 2026-08-12에 제외 해제(정식 고3 학생) —
      학년별 통계는 회차(exam)가 학년+과목으로 나뉘어 있어 고1과 섞이지 않음.
      ※ 단어시험 앱의 EXCLUDE_NAMES는 별개이며 거기서는 계속 제외 상태로 둔다. */
@@ -98,19 +98,21 @@ function subjTabs(cur, fn){
 }
 const QTYPE = {20:"주장",21:"함축의미",22:"요지",23:"주제",24:"제목",31:"빈칸",32:"빈칸",33:"빈칸",34:"빈칸",35:"무관문장",36:"순서",37:"순서",38:"문장삽입",39:"문장삽입",40:"요약"};
 /* ---- 국어: 회차별 지문 세트 [[시작번호, 끝번호, 제재, 이미지파일], ...] ---- */
-const korSets = examDate => (typeof EXAM_SETS_KOR!=="undefined" ? (EXAM_SETS_KOR[examDate]||[]) : []);
+/* 국어 세트: 키=회차(ord). 홀수 회차=비문학(독서), 짝수 회차=문학 */
+const korSets = x => { if(typeof EXAM_SETS_KOR==="undefined") return []; const k=(x&&typeof x==="object")?x.ord:x; return EXAM_SETS_KOR[String(k)]||[]; };
+const korArea = x => (Number((x&&typeof x==="object")?x.ord:x)%2===1 ? "비문학(독서)" : "문학");
 const isKor = e => (e && e.subject === "kor");
 /* 회차의 문항 번호 목록 */
 function qlistOf(exam){
   if(!isKor(exam)) return QLIST;
-  const out=[]; korSets(dstr(exam)).forEach(([a,b])=>{ for(let q=a;q<=b;q++) out.push(q); });
+  const out=[]; korSets(exam).forEach(([a,b])=>{ for(let q=a;q<=b;q++) out.push(q); });
   return out.length ? out : Object.keys(exam.answers||{}).map(Number).sort((x,y)=>x-y);
 }
 /* 문항 유형(국어는 지문 제재) */
 function qtypeOf(exam, qno){
   if(!isKor(exam)) return QTYPE[qno];
-  const s = korSets(dstr(exam)).find(([a,b])=>qno>=a&&qno<=b);
-  return s ? s[2] : "독서";
+  const s = korSets(exam).find(([a,b])=>qno>=a&&qno<=b);
+  return s ? s[2] : (Number(exam.ord)%2===1 ? "독서" : "문학");
 }
 const sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_KEY);
 const app = document.getElementById("app");
@@ -139,12 +141,12 @@ function imgTags(examDate, qno, grade){
   return files.map(f=>`<img class="qimg" src="${imgSrc(examDate,f,grade)}" alt="${qno}번" loading="lazy">`).join("");
 }
 /* 국어: 문항이 속한 지문 세트 이미지 */
-function korImgTagFor(examDate, qno){
-  const s = korSets(examDate).find(([a,b])=>qno>=a&&qno<=b);
+function korImgTagFor(exam, qno){
+  const s = korSets(exam).find(([a,b])=>qno>=a&&qno<=b);
   return s ? `<img class="qimg" src="${korImgSrc(s[3])}" alt="${s[0]}~${s[1]}번" loading="lazy">` : "";
 }
 function qImgTags(exam, qno){
-  return isKor(exam) ? korImgTagFor(dstr(exam), qno) : imgTags(dstr(exam), qno, exam.grade);
+  return isKor(exam) ? korImgTagFor(exam, qno) : imgTags(dstr(exam), qno, exam.grade);
 }
 const EXAMS_CACHE = {};
 async function getExams(grade, subj){
@@ -271,9 +273,9 @@ window.examConfirm = async function(student, examId){
   const exams = await getExams();
   const exam = exams.find(e=>e.id===examId);
   const { count } = await sb.from("mock_attempts").select("id", {count:"exact", head:true}).eq("student_id", student.id).eq("exam_id", examId);
-  const sets = korSets(dstr(exam));
+  const sets = korSets(exam);
   const intro = isKor(exam)
-    ? `비문학(독서) ${qlistOf(exam).length}문항 — 지문 ${sets.length}세트 (${sets.map(s=>s[2]).join(" · ")})<br>
+    ? `${korArea(exam)} ${qlistOf(exam).length}문항 — 지문 ${sets.length}세트 (${sets.map(s=>s[2]).join(" · ")})<br>
        <span class="small">권장 시간 약 35분 · 지문 한 세트를 읽고 그 아래 문항에 모두 답하세요.</span>`
     : `유형별 15문항 — <b>20~24번</b> (주장·함축·요지·주제·제목) + <b>31~40번</b> (빈칸·무관·순서·삽입·요약)<br>
        <span class="small">권장 시간 약 25분 · 제출하면 바로 채점돼요.</span>`;
@@ -290,7 +292,7 @@ window.examConfirm = async function(student, examId){
 /* 화면 단위(step): 영어는 1문항, 국어는 지문 세트 단위 */
 function stepsOf(exam){
   if(!isKor(exam)) return QLIST.map(q=>[q]);
-  const sets = korSets(dstr(exam));
+  const sets = korSets(exam);
   if(sets.length) return sets.map(([a,b])=>{ const r=[]; for(let q=a;q<=b;q++) r.push(q); return r; });
   return qlistOf(exam).map(q=>[q]);
 }
@@ -313,7 +315,7 @@ function question(keepScroll){
     ? `${step[0]}~${step[step.length-1]}번 <span class="badge">${qtypeOf(exam, step[0])}</span>`
     : `${step[0]}번 <span class="badge">${qtypeOf(exam, step[0])}</span>`;
   const navLabel = s => kor ? `${s[0]}~${s[s.length-1]}` : `${s[0]}`;
-  const img = kor ? korImgTagFor(dstr(exam), step[0]) : imgTags(dstr(exam), step[0], exam.grade);
+  const img = kor ? korImgTagFor(exam, step[0]) : imgTags(dstr(exam), step[0], exam.grade);
   const blocks = step.map(q=>`
      <div style="margin:16px 0 4px"><b>${q}번</b>${kor?` <span class="small">답을 고르세요</span>`:""}</div>
      <div class="choices">${[1,2,3,4,5].map(c=>`<button class="choice ${S.answers[q]===c?"sel":""}" onclick="pickAns(${q},${c})">${CN[c]}</button>`).join("")}</div>`).join("");
@@ -383,7 +385,7 @@ function resultScreen(att, items){
      ${wrong.length ? `<h2 style="margin-top:16px">오답 다시 보기 (${wrong.length}문항)</h2>
        ${wrong.map((it,wi)=>`
          <div class="pill"><b>${it.question_no}번</b> <span class="badge">${it.qtype}</span> — 내 답: <span class="no">${it.answer?CN[it.answer]:"무응답"}</span> · 정답: <span class="ok">${CN[Number(key[it.question_no])]}</span></div>
-         ${(isKor(S.exam) && wi>0 && korSets(dstr(S.exam)).find(([a,b])=>it.question_no>=a&&it.question_no<=b) === korSets(dstr(S.exam)).find(([a,b])=>wrong[wi-1].question_no>=a&&wrong[wi-1].question_no<=b)) ? "" : qImgTags(S.exam, it.question_no)}`).join("")}`
+         ${(isKor(S.exam) && wi>0 && korSets(S.exam).find(([a,b])=>it.question_no>=a&&it.question_no<=b) === korSets(S.exam).find(([a,b])=>wrong[wi-1].question_no>=a&&wrong[wi-1].question_no<=b)) ? "" : qImgTags(S.exam, it.question_no)}`).join("")}`
        : `<div class="flag">🎉 전부 맞았어요! 완벽해요.</div>`}
      <div class="row"><button class="btn-primary" onclick='examList(${JSON.stringify(S.student)})'>다른 회차 풀기</button></div>
      <div class="row"><button class="btn-ghost btn-sm" onclick="home()">처음으로</button></div>
@@ -535,7 +537,7 @@ window.dashStudentDetail = async function(student){
     .map(it=>{ const e=byId[it.exam_id];
       return `<tr><td>${e?gname(e.grade)+" "+sname(e.subject)+" "+e.ord+"회":""}</td><td><b>${it.question_no}</b></td><td>${it.qtype}</td>
       <td>${it.answer?CN[it.answer]:"무응답"} → <span class="ok">${e?CN[Number(e.answers[it.question_no])]:""}</span></td>
-      <td><button class="btn-ghost btn-sm" onclick='showQ("${e?dstr(e):""}",${it.question_no},${e?e.grade:1},"${e?e.subject:"eng"}")'>보기</button></td></tr>`; }).join("");
+      <td><button class="btn-ghost btn-sm" onclick='showQ("${e?dstr(e):""}",${it.question_no},${e?e.grade:1},"${e?e.subject:"eng"}",${e?e.ord:0})'>보기</button></td></tr>`; }).join("");
   const totalQ = (atts||[]).reduce((s,a)=>s+(a.total||0),0);
   dashShell(`<h2>${esc(student.name)}</h2>
     <div class="statbox">응시 <b>${(atts||[]).length}회</b> · 정답률 <b>${totalQ?Math.round((atts.reduce((s,a)=>s+a.score,0)/totalQ)*100):"-"}%</b> · 누적 오답 <b>${wrongs.length}</b>문항</div>
@@ -548,12 +550,12 @@ window.dashStudentDetail = async function(student){
     <table><tr><th>회차</th><th>문항</th><th>유형</th><th>내 답 → 정답</th><th></th></tr>${wrongRows||"<tr><td colspan=5>오답 없음 🎉</td></tr>"}</table>
     <div class="row"><button class="btn-ghost btn-sm" onclick="dashStudents()">← 학생 목록</button></div>`);
 };
-window.showQ = function(examDate, qno, grade, subj){
+window.showQ = function(examDate, qno, grade, subj, ord){
   const w = window.open("", "_blank");
   const base = location.href.replace(/[^/]*$/,"");
   let imgs;
   if(subj==="kor"){
-    const s = korSets(examDate).find(([a,b])=>qno>=a&&qno<=b);
+    const s = korSets(ord).find(([a,b])=>qno>=a&&qno<=b);
     imgs = s ? `<img style="width:100%;border:1px solid #ddd;border-radius:8px;margin:6px 0" src="${base}${korImgSrc(s[3])}">` : "";
   } else {
     imgs = ((imgMap(grade)[examDate]||{})[qno]||[]).map(f=>`<img style="width:100%;border:1px solid #ddd;border-radius:8px;margin:6px 0" src="${base}${imgSrc(examDate,f,grade)}">`).join("");
@@ -598,7 +600,7 @@ window.dashReport = async function(studentId){
   const NQ = exams.length ? qlistOf(exams[0]).length : (SUBJ==="kor"?17:15);
   const weakLabel = SUBJ==="kor" ? "보완이 필요한 제재" : "보완이 필요한 유형";
   const txt =
-`[${sname(SUBJ)} 미니모의고사 리포트] ${student.name} (${gname(GRADE)}${SUBJ==="kor"?" · 비문학 독서":""})
+`[${sname(SUBJ)} 미니모의고사 리포트] ${student.name} (${gname(GRADE)}${SUBJ==="kor"?" · 비문학+문학":""})
 (${today.getFullYear()}.${today.getMonth()+1}.${today.getDate()} 기준)
 
 ■ 응시 현황: 총 ${(atts||[]).length}회 응시
