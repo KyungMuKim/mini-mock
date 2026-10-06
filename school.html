@@ -31,7 +31,6 @@
   .orow{display:flex; align-items:center; gap:6px; padding:7px 0; border-bottom:1px solid var(--line);}
   .orow .qn{width:40px; font-weight:800; font-size:1rem;}
   .orow .pt{width:34px; font-size:.72rem; color:var(--sub);}
-  .orow.multi{background:#fffbeb;}
   .bub{flex:1; max-width:62px; padding:9px 0; font-size:1.1rem; font-weight:800; border:2px solid var(--line); border-radius:10px; background:#fff; cursor:pointer; text-align:center;}
   .bub.sel{border-color:var(--pri); background:var(--pri); color:#fff;}
   .tag2{font-size:.68rem; font-weight:800; color:#92400e; background:#fde68a; border-radius:6px; padding:2px 6px; margin-left:2px; white-space:nowrap;}
@@ -67,8 +66,9 @@
 /* ============================================================
    내신 가채점 (학교 시험 답 입력 → 자동 채점 → 반 통계)
    - 시험·정답·배점: Supabase school_exams.questions [{no, pts, ans:[..], tag}]
-     · ans가 2개면 '2개 고르기' 문항 — 두 개 모두 맞아야 정답(부분점수 없음)
-   - 응시: school_attempts (학생별 '마지막 제출'이 통계에 반영 → 잘못 입력하면 다시 제출 가능)
+     · ans가 2개인 문항은 두 개 모두 맞아야 정답(부분점수 없음). 학생 화면에는 정답 개수를 절대 노출하지 않음 —
+       모든 문항이 똑같이 '누르면 선택/다시 누르면 취소, 여러 개 선택 가능'으로 동작
+   - 응시: school_attempts (학생당 1회 제출. 제출 후 정답이 공개되므로 재제출 불가, 통계는 '첫 제출' 기준)
    - 미니모의고사·단어시험과 같은 Supabase 프로젝트 / 학생 비밀번호 / 선생님 비밀번호 사용
    ============================================================ */
 const CONFIG = {
@@ -108,12 +108,12 @@ function grade(ex, answers){
   return { score, cnt, res };
 }
 const fmtAns = arr => (arr&&arr.length) ? arr.slice().sort().map(c=>CN[c]).join("") : "무응답";
-/* 학생별 마지막 제출만 (통계 제외 계정 빼고) */
+/* 학생별 첫 제출만 (통계 제외 계정 빼고) */
 async function latestAttempts(examId){
   const { data, error } = await sb.from("school_attempts").select("id, student_id, answers, score, correct_count, duration_sec, taken_at, students(name)").eq("exam_id", examId).order("taken_at");
   if(error) err(error);
   const last = {}, cnt = {};
-  (data||[]).forEach(a=>{ last[a.student_id]=a; cnt[a.student_id]=(cnt[a.student_id]||0)+1; });
+  (data||[]).forEach(a=>{ if(!(a.student_id in last)) last[a.student_id]=a; cnt[a.student_id]=(cnt[a.student_id]||0)+1; });
   return Object.values(last).filter(a=>!isExcluded(a.students?.name)).map(a=>({...a, submits:cnt[a.student_id]}));
 }
 
@@ -185,16 +185,15 @@ function startOmr(answers){
 }
 function omr(){
   const ex = S.exam, qs = ex.questions;
-  const done = qs.filter(q=>(S.answers[q.no]||[]).length === q.ans.length).length;
-  const multis = qs.filter(isMulti).map(q=>q.no);
+  const done = qs.filter(q=>(S.answers[q.no]||[]).length).length;
   app.innerHTML = `<div class="card">
     <h2>${esc(S.student.name)} · 답 입력</h2>
-    <div class="sub">${esc(ex.label)}<br>시험지에 표시한 답을 그대로 눌러 주세요. ${multis.length?`<b>${multis.join("·")}번</b>은 답을 <b>2개</b> 골라요.`:""}</div>
+    <div class="sub">${esc(ex.label)}<br>시험지에 표시한 답을 그대로 눌러 주세요. 다시 누르면 취소돼요.<br><b>제출은 한 번만</b> 할 수 있으니 꼼꼼히 확인하고 제출해요.</div>
     <div class="progress"><div style="width:${(done/qs.length*100).toFixed(0)}%"></div></div>
     <div class="small" id="cnt">${done}/${qs.length} 입력</div>
     <div class="omr">${qs.map(q=>`
-      <div class="orow ${isMulti(q)?"multi":""}">
-        <span class="qn">${q.no}${isMulti(q)?`<span class="tag2">2개</span>`:""}</span><span class="pt">${q.pts}점</span>
+      <div class="orow">
+        <span class="qn">${q.no}</span><span class="pt">${q.pts}점</span>
         ${[1,2,3,4,5].map(c=>`<button class="bub ${(S.answers[q.no]||[]).includes(c)?"sel":""}" onclick="pick(${q.no},${c})">${CN[c]}</button>`).join("")}
       </div>`).join("")}</div>
     <div class="row"><button class="btn-primary" onclick="submitOmr()">제출하고 채점하기 ✅</button></div>
@@ -202,22 +201,17 @@ function omr(){
   </div>`;
 }
 window.pick = function(no, c){
-  const q = S.exam.questions.find(x=>x.no===no);
   let cur = S.answers[no] || [];
-  if(cur.includes(c)) cur = cur.filter(x=>x!==c);
-  else if(isMulti(q)){ cur = [...cur, c]; if(cur.length > q.ans.length) cur = cur.slice(-q.ans.length); }
-  else cur = [c];
+  cur = cur.includes(c) ? cur.filter(x=>x!==c) : [...cur, c];
   S.answers[no] = cur;
   const y = window.scrollY; omr(); window.scrollTo(0, y);
 };
 window.submitOmr = async function(){
   const ex = S.exam;
   const blank = ex.questions.filter(q=>!(S.answers[q.no]||[]).length).map(q=>q.no);
-  const short = ex.questions.filter(q=>isMulti(q) && (S.answers[q.no]||[]).length===1).map(q=>q.no);
   let msg = "";
   if(blank.length) msg += `아직 안 고른 문항: ${blank.join(", ")}번\n`;
-  if(short.length) msg += `2개를 골라야 하는데 1개만 고른 문항: ${short.join(", ")}번\n`;
-  if(msg && !confirm(msg + "\n그대로 제출할까요? (빈 칸은 틀린 것으로 채점돼요)")) return;
+  if(msg && !confirm(msg + "\n그대로 제출할까요? (빈 칸은 틀린 것으로 채점돼요. 제출 후에는 고칠 수 없어요)")) return;
   const g = grade(ex, S.answers);
   const answers = {}; ex.questions.forEach(q=>{ const a=S.answers[q.no]||[]; if(a.length) answers[q.no]=a.slice().sort(); });
   app.innerHTML = `<div class="card"><h2>채점 중...</h2></div>`;
@@ -244,7 +238,7 @@ async function resultScreen(att, revisit){
   }
   app.innerHTML = `<div class="card">
     <h2>${esc(S.student.name)} · 가채점 결과</h2>
-    ${revisit?`<div class="flag amber">${fmtDate(att.taken_at)}에 입력한 답이에요. 잘못 입력했다면 아래에서 고쳐서 다시 제출할 수 있어요.</div>`:""}
+    ${revisit?`<div class="flag amber">${fmtDate(att.taken_at)}에 제출한 답이에요.</div>`:""}
     <div class="score-big">${g.score} <span style="font-size:1.1rem;color:var(--sub)">/ ${totalPts(ex)}점</span></div>
     <div class="sub">${esc(ex.label)} · ${g.cnt}/${ex.questions.length}문항 정답</div>
     ${avgLine}
@@ -254,7 +248,6 @@ async function resultScreen(att, revisit){
       ${wrong.map(r=>`<tr><td><b>${r.q.no}</b></td><td class="no">${fmtAns(r.mine)}</td><td class="ok">${fmtAns(r.q.ans)}</td><td>${r.q.pts}</td><td class="small">${esc(r.q.tag||"")}</td></tr>`).join("")}</table>`
       : `<div class="flag">🎉 전부 맞았어요! 정말 잘했어요.</div>`}
     <div class="small" style="margin-top:10px">※ 가채점이에요. 학교 공식 정답·정정 결과에 따라 실제 점수와 다를 수 있어요.</div>
-    <div class="row"><button class="btn-ghost" onclick='startOmr(${JSON.stringify(att.answers||{})})'>✏️ 답 고쳐서 다시 제출</button></div>
     <div class="row"><button class="btn-primary" onclick="pickExam(${ex.id})">처음으로</button></div>
   </div>`;
   window.scrollTo(0,0);
@@ -327,7 +320,7 @@ window.dash = async function(examId){
 학생별: ${[...atts].sort((a,b)=>b.score-a.score).map(a=>`${a.students?.name} ${a.score}`).join(", ")}`;
   app.innerHTML = `<div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h1>📊 가채점 통계</h1><button class="btn-ghost btn-sm" onclick="EXAMS=null;home()">나가기</button></div>
-    <div class="sub"><span class="live"></span>${esc(ex.label)} · 학생이 제출하면 자동으로 새로고침돼요 (학생별 마지막 제출 기준)</div>
+    <div class="sub"><span class="live"></span>${esc(ex.label)} · 학생이 제출하면 자동으로 새로고침돼요 (학생별 첫 제출 기준)</div>
     ${sel}
     <div class="statgrid">
       <div class="stat"><b>${N}명</b><span>입력 인원</span></div>
