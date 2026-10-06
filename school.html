@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>내신 가채점</title>
+<meta name="robots" content="noindex, nofollow">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{ --bg:#f4f6fb; --card:#fff; --ink:#1c2333; --sub:#68718a; --pri:#c2410c; --pri-soft:#fff7ed; --ok:#16a34a; --no:#dc2626; --line:#e5e9f2; }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{font-family:'Apple SD Gothic Neo','Malgun Gothic',sans-serif; background:var(--bg); color:var(--ink); padding:16px; max-width:820px; margin:0 auto;}
+  .card{background:var(--card); border-radius:16px; padding:22px; box-shadow:0 2px 10px rgba(20,30,60,.06); margin-bottom:14px;}
+  h1{font-size:1.45rem; margin-bottom:6px;} h2{font-size:1.15rem; margin-bottom:8px;}
+  .sub{color:var(--sub); font-size:.9rem; margin-bottom:14px; line-height:1.5;}
+  .small{color:var(--sub); font-size:.8rem;}
+  .pill{background:var(--pri-soft); border-radius:10px; padding:12px 14px; font-size:.95rem; margin:10px 0; line-height:1.6;}
+  .btn-primary{background:var(--pri); color:#fff; border:none; border-radius:10px; padding:13px 22px; font-size:1.05rem; font-weight:700; cursor:pointer; width:100%;}
+  .btn-primary:disabled{opacity:.45; cursor:default;}
+  .btn-ghost{background:#eef1f8; color:var(--ink); border:none; border-radius:10px; padding:10px 16px; font-size:.95rem; cursor:pointer;}
+  .btn-sm{padding:6px 10px; font-size:.82rem; border-radius:8px;}
+  .row{display:flex; gap:8px; margin-top:12px; flex-wrap:wrap;}
+  .row .btn-primary{flex:1; width:auto;}
+  .student-btn{display:inline-block; background:var(--pri-soft); border:2px solid transparent; border-radius:12px; padding:12px 16px; margin:4px 3px; font-size:1rem; font-weight:700; cursor:pointer;}
+  .exam-btn{display:flex; justify-content:space-between; align-items:center; width:100%; background:var(--pri-soft); border:2px solid #fdba74; border-radius:12px; padding:13px 16px; margin:6px 0; font-size:1rem; font-weight:700; cursor:pointer; text-align:left;}
+  .flag{background:#f0fdf4; color:#166534; font-size:.85rem; border-radius:8px; padding:8px 10px; margin:8px 0;}
+  .flag.amber{background:#fffbeb; color:#92400e;}
+  .progress{height:8px; background:var(--line); border-radius:4px; overflow:hidden; margin:8px 0 4px;}
+  .progress div{height:100%; background:var(--pri); transition:width .2s;}
+  .omr{margin-top:8px;}
+  .orow{display:flex; align-items:center; gap:6px; padding:7px 0; border-bottom:1px solid var(--line);}
+  .orow .qn{width:40px; font-weight:800; font-size:1rem;}
+  .orow .pt{width:34px; font-size:.72rem; color:var(--sub);}
+  .orow.multi{background:#fffbeb;}
+  .bub{flex:1; max-width:62px; padding:9px 0; font-size:1.1rem; font-weight:800; border:2px solid var(--line); border-radius:10px; background:#fff; cursor:pointer; text-align:center;}
+  .bub.sel{border-color:var(--pri); background:var(--pri); color:#fff;}
+  .tag2{font-size:.68rem; font-weight:800; color:#92400e; background:#fde68a; border-radius:6px; padding:2px 6px; margin-left:2px; white-space:nowrap;}
+  .score-big{font-size:2.4rem; font-weight:900; margin:8px 0;}
+  .oxgrid{display:grid; grid-template-columns:repeat(7,1fr); gap:6px; margin:10px 0;}
+  .oxcell{padding:8px 0; text-align:center; border-radius:8px; font-weight:800; font-size:.85rem;}
+  .oxcell.o{background:#dcfce7; color:#166534;} .oxcell.x{background:#fee2e2; color:#b91c1c;}
+  table{width:100%; border-collapse:collapse; font-size:.88rem; margin-top:8px;}
+  th,td{padding:7px 5px; border-bottom:1px solid var(--line); text-align:left; vertical-align:middle;}
+  th{color:var(--sub); font-weight:600; font-size:.78rem;}
+  .ok{color:var(--ok); font-weight:800;} .no{color:var(--no); font-weight:800;}
+  .statgrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:8px; margin:10px 0;}
+  .stat{background:var(--pri-soft); border-radius:10px; padding:10px 12px;}
+  .stat b{display:block; font-size:1.4rem;} .stat span{font-size:.78rem; color:var(--sub);}
+  .hbar{height:10px; background:var(--line); border-radius:5px; overflow:hidden; min-width:60px;}
+  .hbar div{height:100%; background:var(--ok);}
+  .hbar.bad div{background:var(--no);}
+  .hist{display:flex; align-items:flex-end; gap:6px; height:120px; margin:12px 0 4px; padding:0 2px;}
+  .hist .col{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%;}
+  .hist .col div{width:100%; background:var(--pri); border-radius:5px 5px 0 0; min-height:2px;}
+  .hist .col span{font-size:.72rem; color:var(--sub); margin-bottom:2px;}
+  .histlab{display:flex; gap:6px; padding:0 2px;} .histlab span{flex:1; text-align:center; font-size:.68rem; color:var(--sub);}
+  .live{display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--ok); margin-right:6px; animation:pulse 1.5s infinite;}
+  @keyframes pulse{50%{opacity:.3}}
+  .copybox{white-space:pre-wrap; background:#f7f9ff; border:1px solid var(--line); border-radius:10px; padding:14px; font-size:.88rem; line-height:1.7; margin:10px 0;}
+  select{font-size:.95rem; padding:8px; border:2px solid var(--line); border-radius:10px; background:#fff; max-width:100%;}
+  @media (max-width:420px){ .orow .pt{display:none;} .bub{padding:8px 0; font-size:1rem;} .oxgrid{grid-template-columns:repeat(5,1fr);} }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+/* ============================================================
+   내신 가채점 (학교 시험 답 입력 → 자동 채점 → 반 통계)
+   - 시험·정답·배점: Supabase school_exams.questions [{no, pts, ans:[..], tag}]
+     · ans가 2개면 '2개 고르기' 문항 — 두 개 모두 맞아야 정답(부분점수 없음)
+   - 응시: school_attempts (학생별 '마지막 제출'이 통계에 반영 → 잘못 입력하면 다시 제출 가능)
+   - 미니모의고사·단어시험과 같은 Supabase 프로젝트 / 학생 비밀번호 / 선생님 비밀번호 사용
+   ============================================================ */
+const CONFIG = {
+  SUPABASE_URL: "https://xtxuozcbeqruuigeijsz.supabase.co",
+  SUPABASE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh0eHVvemNiZXFydXVpZ2VpanN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMxNjI4MzMsImV4cCI6MjA5ODczODgzM30.kuHunWODG6_lv3JajIMmr6Xw7yEORy-Dixs-EB4sYaM",
+  EXCLUDE_NAMES: ["실험용","실험","테스트","test","딘","안성민","서승원"],
+  SHOW_CLASS_AVG_TO_STUDENT: true   // 학생 결과 화면에 현재 응시자 평균 표시
+};
+const sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_KEY);
+const app = document.getElementById("app");
+const CN = ["","①","②","③","④","⑤"];
+const esc = s => String(s??"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmtDate = t => { const d=new Date(t); return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`; };
+const isExcluded = name => CONFIG.EXCLUDE_NAMES.includes((name||"").trim());
+function err(e){ alert("오류: " + (e.message||e)); throw e; }
+let S = {}, T = {}, EXAMS = null, STUDENTS = null;
+
+/* ---------- 데이터 ---------- */
+async function getExams(){
+  if(EXAMS) return EXAMS;
+  const { data, error } = await sb.from("school_exams").select("*").eq("active", true).order("exam_date", {ascending:false});
+  if(error) err(error);
+  EXAMS = data||[]; return EXAMS;
+}
+const examById = id => (EXAMS||[]).find(e=>e.id===id);
+const totalPts = ex => ex.questions.reduce((s,q)=>s+q.pts,0);
+const isMulti = q => q.ans.length > 1;
+const sameSet = (a,b) => a.length===b.length && [...a].sort().join()===[...b].sort().join();
+function grade(ex, answers){
+  let score=0, cnt=0;
+  const res = ex.questions.map(q=>{
+    const mine = answers[q.no]||[];
+    const ok = sameSet(mine, q.ans);
+    if(ok){ score+=q.pts; cnt++; }
+    return { q, mine, ok };
+  });
+  return { score, cnt, res };
+}
+const fmtAns = arr => (arr&&arr.length) ? arr.slice().sort().map(c=>CN[c]).join("") : "무응답";
+/* 학생별 마지막 제출만 (통계 제외 계정 빼고) */
+async function latestAttempts(examId){
+  const { data, error } = await sb.from("school_attempts").select("id, student_id, answers, score, correct_count, duration_sec, taken_at, students(name)").eq("exam_id", examId).order("taken_at");
+  if(error) err(error);
+  const last = {}, cnt = {};
+  (data||[]).forEach(a=>{ last[a.student_id]=a; cnt[a.student_id]=(cnt[a.student_id]||0)+1; });
+  return Object.values(last).filter(a=>!isExcluded(a.students?.name)).map(a=>({...a, submits:cnt[a.student_id]}));
+}
+
+/* ================= 학생: 홈 ================= */
+async function home(){
+  app.innerHTML = `<div class="card"><h1>📝 내신 가채점</h1><div class="sub">불러오는 중...</div></div>`;
+  const exams = await getExams();
+  const qs = new URLSearchParams(location.search);
+  const want = Number(qs.get("exam"));
+  if(want && examById(want)) return pickExam(want);
+  if(exams.length === 1) return pickExam(exams[0].id);
+  app.innerHTML = `<div class="card"><h1>📝 내신 가채점</h1>
+    <div class="sub">시험 본 학교 시험지를 고르세요.</div>
+    ${exams.map(e=>`<button class="exam-btn" onclick="pickExam(${e.id})"><span>${esc(e.label)}</span><span class="small">${e.exam_date||""}</span></button>`).join("") || '<div class="pill">지금 열려 있는 가채점이 없어요.</div>'}
+    <div class="row"><a class="btn-ghost btn-sm" href="./" style="text-decoration:none">← 미니모의고사로</a><button class="btn-ghost btn-sm" onclick="teacherLogin()">🔑 선생님</button></div></div>`;
+}
+window.pickExam = async function(examId){
+  S = { exam: examById(examId) };
+  if(!STUDENTS){
+    const { data, error } = await sb.from("students").select("*").eq("active", true).order("name");
+    if(error) err(error);
+    STUDENTS = (data||[]).filter(s=>Number(s.grade||1)!==3);
+  }
+  const ex = S.exam;
+  app.innerHTML = `<div class="card">
+    <h1>📝 ${esc(ex.label)}</h1>
+    <div class="sub">${ex.exam_date||""} · ${ex.questions.length}문항 ${totalPts(ex)}점 만점<br>
+      시험지에 표시한 답을 그대로 입력하면 바로 채점돼요. <b>이름</b>을 선택하세요.</div>
+    ${STUDENTS.map(s=>`<button class="student-btn" onclick='pickStudent(${JSON.stringify({id:s.id,name:s.name})})'>${esc(s.name)}</button>`).join("")}
+    <div class="row"><a class="btn-ghost btn-sm" href="./" style="text-decoration:none">← 미니모의고사로</a><button class="btn-ghost btn-sm" onclick="teacherLogin()">🔑 선생님</button></div>
+  </div>`;
+};
+window.pickStudent = function(student){
+  app.innerHTML = `<div class="card">
+    <h2>본인 확인</h2>
+    <div class="sub">아래 이름이 <b>본인</b>이 맞는지 확인하고, <b>비밀번호 4자리</b>를 입력하세요.</div>
+    <div style="font-size:2.1rem; font-weight:900; text-align:center; margin:14px 0">${esc(student.name)}</div>
+    <div class="row" style="justify-content:center">
+      <input type="password" id="pinInput" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" placeholder="비밀번호 4자리"
+        style="text-align:center; font-size:1.3rem; letter-spacing:.35em; width:190px; padding:10px; border:2px solid #cbd5e1; border-radius:10px">
+    </div>
+    <div class="row"><button class="btn-primary" onclick='pinGo(${JSON.stringify(student)})'>네, ${esc(student.name)} 입니다 →</button></div>
+    <div class="row"><button class="btn-ghost btn-sm" onclick="pickExam(${S.exam.id})">← 아니에요, 이름 다시 선택</button></div>
+  </div>`;
+  const inp = document.getElementById("pinInput");
+  inp.focus(); inp.addEventListener("keydown", e=>{ if(e.key==="Enter") pinGo(student); });
+};
+window.pinGo = async function(student){
+  const inp = document.getElementById("pinInput");
+  const pin = (inp && inp.value || "").trim();
+  if(!/^\d{4}$/.test(pin)){ alert("비밀번호 4자리(숫자)를 입력하세요"); inp&&inp.focus(); return; }
+  document.querySelectorAll("button").forEach(b=>b.disabled=true);
+  const { data: ok, error } = await sb.rpc("student_pin_verify", { p_student_id: student.id, p_pin: pin });
+  document.querySelectorAll("button").forEach(b=>b.disabled=false);
+  if(error) return alert("오류: "+error.message);
+  if(!ok){ inp.value=""; inp.focus(); return alert("비밀번호가 달라요. 본인 이름이 맞는지, 비밀번호를 다시 확인하세요."); }
+  S.student = student;
+  const { data: prev, error: e2 } = await sb.from("school_attempts").select("*").eq("exam_id", S.exam.id).eq("student_id", student.id).order("taken_at", {ascending:false}).limit(1);
+  if(e2) err(e2);
+  if(prev && prev.length) return resultScreen(prev[0], true);
+  startOmr({});
+};
+
+/* ================= 학생: 답 입력 (OMR) ================= */
+function startOmr(answers){
+  S.answers = JSON.parse(JSON.stringify(answers||{}));
+  S.startedAt = Date.now();
+  omr();
+}
+function omr(){
+  const ex = S.exam, qs = ex.questions;
+  const done = qs.filter(q=>(S.answers[q.no]||[]).length === q.ans.length).length;
+  const multis = qs.filter(isMulti).map(q=>q.no);
+  app.innerHTML = `<div class="card">
+    <h2>${esc(S.student.name)} · 답 입력</h2>
+    <div class="sub">${esc(ex.label)}<br>시험지에 표시한 답을 그대로 눌러 주세요. ${multis.length?`<b>${multis.join("·")}번</b>은 답을 <b>2개</b> 골라요.`:""}</div>
+    <div class="progress"><div style="width:${(done/qs.length*100).toFixed(0)}%"></div></div>
+    <div class="small" id="cnt">${done}/${qs.length} 입력</div>
+    <div class="omr">${qs.map(q=>`
+      <div class="orow ${isMulti(q)?"multi":""}">
+        <span class="qn">${q.no}${isMulti(q)?`<span class="tag2">2개</span>`:""}</span><span class="pt">${q.pts}점</span>
+        ${[1,2,3,4,5].map(c=>`<button class="bub ${(S.answers[q.no]||[]).includes(c)?"sel":""}" onclick="pick(${q.no},${c})">${CN[c]}</button>`).join("")}
+      </div>`).join("")}</div>
+    <div class="row"><button class="btn-primary" onclick="submitOmr()">제출하고 채점하기 ✅</button></div>
+    <div class="row"><button class="btn-ghost btn-sm" onclick="pickExam(${ex.id})">← 처음으로</button></div>
+  </div>`;
+}
+window.pick = function(no, c){
+  const q = S.exam.questions.find(x=>x.no===no);
+  let cur = S.answers[no] || [];
+  if(cur.includes(c)) cur = cur.filter(x=>x!==c);
+  else if(isMulti(q)){ cur = [...cur, c]; if(cur.length > q.ans.length) cur = cur.slice(-q.ans.length); }
+  else cur = [c];
+  S.answers[no] = cur;
+  const y = window.scrollY; omr(); window.scrollTo(0, y);
+};
+window.submitOmr = async function(){
+  const ex = S.exam;
+  const blank = ex.questions.filter(q=>!(S.answers[q.no]||[]).length).map(q=>q.no);
+  const short = ex.questions.filter(q=>isMulti(q) && (S.answers[q.no]||[]).length===1).map(q=>q.no);
+  let msg = "";
+  if(blank.length) msg += `아직 안 고른 문항: ${blank.join(", ")}번\n`;
+  if(short.length) msg += `2개를 골라야 하는데 1개만 고른 문항: ${short.join(", ")}번\n`;
+  if(msg && !confirm(msg + "\n그대로 제출할까요? (빈 칸은 틀린 것으로 채점돼요)")) return;
+  const g = grade(ex, S.answers);
+  const answers = {}; ex.questions.forEach(q=>{ const a=S.answers[q.no]||[]; if(a.length) answers[q.no]=a.slice().sort(); });
+  app.innerHTML = `<div class="card"><h2>채점 중...</h2></div>`;
+  const { data: att, error } = await sb.from("school_attempts").insert({
+    exam_id: ex.id, student_id: S.student.id, answers, score: g.score, correct_count: g.cnt,
+    duration_sec: Math.round((Date.now()-S.startedAt)/1000)
+  }).select().single();
+  if(error) err(error);
+  resultScreen(att, false);
+};
+
+/* ================= 학생: 결과 ================= */
+async function resultScreen(att, revisit){
+  const ex = S.exam;
+  const g = grade(ex, att.answers||{});
+  const wrong = g.res.filter(r=>!r.ok);
+  let avgLine = "";
+  if(CONFIG.SHOW_CLASS_AVG_TO_STUDENT){
+    const all = await latestAttempts(ex.id);
+    if(all.length >= 2){
+      const avg = all.reduce((s,a)=>s+a.score,0)/all.length;
+      avgLine = `<div class="pill">지금까지 입력한 친구 <b>${all.length}명</b>의 평균은 <b>${avg.toFixed(1)}점</b>이에요.</div>`;
+    }
+  }
+  app.innerHTML = `<div class="card">
+    <h2>${esc(S.student.name)} · 가채점 결과</h2>
+    ${revisit?`<div class="flag amber">${fmtDate(att.taken_at)}에 입력한 답이에요. 잘못 입력했다면 아래에서 고쳐서 다시 제출할 수 있어요.</div>`:""}
+    <div class="score-big">${g.score} <span style="font-size:1.1rem;color:var(--sub)">/ ${totalPts(ex)}점</span></div>
+    <div class="sub">${esc(ex.label)} · ${g.cnt}/${ex.questions.length}문항 정답</div>
+    ${avgLine}
+    <div class="oxgrid">${g.res.map(r=>`<div class="oxcell ${r.ok?"o":"x"}">${r.q.no} ${r.ok?"○":"✕"}</div>`).join("")}</div>
+    ${wrong.length ? `<h2 style="margin-top:14px">틀린 문항 (${wrong.length}개 · −${wrong.reduce((s,r)=>s+r.q.pts,0)}점)</h2>
+      <table><tr><th>문항</th><th>내 답</th><th>정답</th><th>배점</th><th>포인트</th></tr>
+      ${wrong.map(r=>`<tr><td><b>${r.q.no}</b></td><td class="no">${fmtAns(r.mine)}</td><td class="ok">${fmtAns(r.q.ans)}</td><td>${r.q.pts}</td><td class="small">${esc(r.q.tag||"")}</td></tr>`).join("")}</table>`
+      : `<div class="flag">🎉 전부 맞았어요! 정말 잘했어요.</div>`}
+    <div class="small" style="margin-top:10px">※ 가채점이에요. 학교 공식 정답·정정 결과에 따라 실제 점수와 다를 수 있어요.</div>
+    <div class="row"><button class="btn-ghost" onclick='startOmr(${JSON.stringify(att.answers||{})})'>✏️ 답 고쳐서 다시 제출</button></div>
+    <div class="row"><button class="btn-primary" onclick="pickExam(${ex.id})">처음으로</button></div>
+  </div>`;
+  window.scrollTo(0,0);
+}
+
+/* ================= 선생님 ================= */
+function askPin(label){
+  return new Promise(res=>{
+    const ov = document.createElement("div");
+    ov.style.cssText = "position:fixed;inset:0;background:rgba(15,23,42,.55);display:flex;align-items:center;justify-content:center;z-index:9999";
+    ov.innerHTML = `<div style="background:#fff;border-radius:16px;padding:24px;width:280px;box-shadow:0 10px 40px rgba(0,0,0,.25)">
+      <div style="font-weight:800;margin-bottom:10px">${label}</div>
+      <input id="_pinAsk" type="password" inputmode="numeric" maxlength="4" autocomplete="off"
+        style="width:100%;text-align:center;font-size:1.3rem;letter-spacing:.35em;padding:10px;border:2px solid #cbd5e1;border-radius:10px">
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <button id="_pinCancel" style="flex:1;background:#eef1f8;border:none;border-radius:10px;padding:11px;cursor:pointer">취소</button>
+        <button id="_pinOk" style="flex:1;background:#c2410c;color:#fff;border:none;border-radius:10px;padding:11px;font-weight:700;cursor:pointer">확인</button>
+      </div></div>`;
+    document.body.appendChild(ov);
+    const inp = ov.querySelector("#_pinAsk");
+    const done = v => { ov.remove(); res(v); };
+    ov.querySelector("#_pinOk").onclick = ()=>done(inp.value.trim());
+    ov.querySelector("#_pinCancel").onclick = ()=>done(null);
+    inp.addEventListener("keydown", e=>{ if(e.key==="Enter") done(inp.value.trim()); });
+    inp.focus();
+  });
+}
+window.teacherLogin = async function(){
+  const pin = await askPin("선생님 비밀번호");
+  if(pin === null) return;
+  const { data: ok, error } = await sb.rpc("teacher_pin_verify", { p_pin: pin });
+  if(error) return alert("비밀번호 확인 실패: " + error.message);
+  if(!ok) return alert("비밀번호가 달라요");
+  const exams = await getExams();
+  T = { examId: (S.exam && S.exam.id) || exams[0]?.id };
+  sb.channel("school_dash").on("postgres_changes",{event:"INSERT",schema:"public",table:"school_attempts"}, ()=>dash()).subscribe();
+  dash();
+};
+window.dash = async function(examId){
+  if(examId) T.examId = examId;
+  const exams = await getExams();
+  const ex = examById(T.examId);
+  if(!ex){ app.innerHTML = `<div class="card"><h1>선생님 통계</h1><div class="pill">열린 시험이 없어요.</div></div>`; return; }
+  const atts = await latestAttempts(ex.id);
+  const N = atts.length, TOT = totalPts(ex);
+  const scores = atts.map(a=>a.score).sort((a,b)=>a-b);
+  const avg = N ? scores.reduce((s,v)=>s+v,0)/N : 0;
+  const med = N ? (N%2 ? scores[(N-1)/2] : (scores[N/2-1]+scores[N/2])/2) : 0;
+  const sd = N ? Math.sqrt(scores.reduce((s,v)=>s+(v-avg)**2,0)/N) : 0;
+  /* 점수 분포 (10점 구간, 100점은 90대에 포함) */
+  const bins = Array(10).fill(0);
+  scores.forEach(s=>bins[Math.min(9, Math.floor(s/10))]++);
+  const bmax = Math.max(1, ...bins);
+  /* 문항 통계 */
+  const qstat = ex.questions.map(q=>{
+    const dist=[0,0,0,0,0,0]; let ok=0, blank=0;
+    atts.forEach(a=>{ const m=(a.answers||{})[q.no]||[]; if(!m.length) blank++; m.forEach(c=>dist[c]++); if(sameSet(m,q.ans)) ok++; });
+    const wrongs = atts.filter(a=>!sameSet(((a.answers||{})[q.no]||[]), q.ans));
+    /* 가장 많이 고른 오답(조합) */
+    const combo = {}; wrongs.forEach(a=>{ const k=fmtAns((a.answers||{})[q.no]); combo[k]=(combo[k]||0)+1; });
+    const top = Object.entries(combo).sort((a,b)=>b[1]-a[1])[0];
+    return { q, ok, rate: N? ok/N : 0, dist, blank, top };
+  });
+  const byWrong = [...qstat].sort((a,b)=>a.rate-b.rate || a.q.no-b.q.no);
+  const sel = exams.length>1 ? `<select onchange="dash(Number(this.value))">${exams.map(e=>`<option value="${e.id}" ${e.id===ex.id?"selected":""}>${esc(e.label)}</option>`).join("")}</select>` : "";
+  const summary =
+`[${ex.label} 가채점 통계] ${new Date().getMonth()+1}/${new Date().getDate()} 기준
+입력 ${N}명 · 평균 ${avg.toFixed(1)} · 중앙값 ${med} · 최고 ${N?scores[N-1]:"-"} · 최저 ${N?scores[0]:"-"}
+오답률 TOP5: ${byWrong.slice(0,5).map(s=>`${s.q.no}번${s.q.tag?"("+s.q.tag+")":""} ${Math.round((1-s.rate)*100)}%`).join(", ")}
+학생별: ${[...atts].sort((a,b)=>b.score-a.score).map(a=>`${a.students?.name} ${a.score}`).join(", ")}`;
+  app.innerHTML = `<div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h1>📊 가채점 통계</h1><button class="btn-ghost btn-sm" onclick="EXAMS=null;home()">나가기</button></div>
+    <div class="sub"><span class="live"></span>${esc(ex.label)} · 학생이 제출하면 자동으로 새로고침돼요 (학생별 마지막 제출 기준)</div>
+    ${sel}
+    <div class="statgrid">
+      <div class="stat"><b>${N}명</b><span>입력 인원</span></div>
+      <div class="stat"><b>${N?avg.toFixed(1):"-"}</b><span>평균 / ${TOT}</span></div>
+      <div class="stat"><b>${N?med:"-"}</b><span>중앙값</span></div>
+      <div class="stat"><b>${N?scores[N-1]:"-"}</b><span>최고</span></div>
+      <div class="stat"><b>${N?scores[0]:"-"}</b><span>최저</span></div>
+      <div class="stat"><b>${N?sd.toFixed(1):"-"}</b><span>표준편차</span></div>
+    </div>
+    <h2 style="margin-top:14px">점수 분포</h2>
+    <div class="hist">${bins.map(b=>`<div class="col"><span>${b||""}</span><div style="height:${b/bmax*100}%"></div></div>`).join("")}</div>
+    <div class="histlab">${bins.map((_,i)=>`<span>${i*10}${i===9?"~100":"대"}</span>`).join("")}</div>
+
+    <h2 style="margin-top:18px">문항별 정답률 <span class="small">(오답률 높은 순 — 해설 우선순위)</span></h2>
+    <table><tr><th>문항</th><th>포인트</th><th>정답</th><th>정답률</th><th></th><th>선지 선택 ①~⑤</th><th>최다 오답</th></tr>
+    ${byWrong.map(s=>{ const r=Math.round(s.rate*100); return `<tr>
+      <td><b>${s.q.no}</b> <span class="small">${s.q.pts}점</span></td><td class="small">${esc(s.q.tag||"")}</td><td class="ok">${fmtAns(s.q.ans)}</td>
+      <td class="${r<50?"no":""}">${N?r+"%":"-"} <span class="small">${s.ok}/${N}</span></td>
+      <td><div class="hbar ${r<50?"bad":""}"><div style="width:${r}%"></div></div></td>
+      <td class="small">${[1,2,3,4,5].map(c=>`${s.q.ans.includes(c)?"<b>":""}${CN[c]}${s.dist[c]}${s.q.ans.includes(c)?"</b>":""}`).join(" ")}${s.blank?` · 무응답${s.blank}`:""}</td>
+      <td class="small">${s.top?`${s.top[0]} (${s.top[1]}명)`:"-"}</td></tr>`; }).join("")}</table>
+
+    <h2 style="margin-top:18px">학생별 점수</h2>
+    <table><tr><th>순위</th><th>학생</th><th>점수</th><th>맞은 수</th><th>틀린 문항</th><th>제출</th></tr>
+    ${[...atts].sort((a,b)=>b.score-a.score).map((a,i)=>{ const g=grade(ex,a.answers||{}); return `<tr>
+      <td>${i+1}</td><td><b>${esc(a.students?.name)}</b></td><td><b>${a.score}</b></td><td>${a.correct_count}/${ex.questions.length}</td>
+      <td class="small">${g.res.filter(r=>!r.ok).map(r=>r.q.no).join(", ")||"없음 🎉"}</td>
+      <td class="small">${fmtDate(a.taken_at)}${a.submits>1?` (${a.submits}회)`:""}</td></tr>`; }).join("") || `<tr><td colspan=6>아직 입력한 학생이 없어요</td></tr>`}</table>
+
+    <h2 style="margin-top:18px">요약 (복사용)</h2>
+    <div class="copybox" id="sum">${esc(summary)}</div>
+    <div class="row"><button class="btn-primary" onclick="navigator.clipboard.writeText(document.getElementById('sum').innerText).then(()=>alert('복사했어요'))">📋 요약 복사</button></div>
+  </div>`;
+};
+
+home();
+</script>
+</body>
+</html>

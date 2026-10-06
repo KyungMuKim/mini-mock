@@ -181,6 +181,10 @@ async function home(){
    <div class="card">
      <h1>미니모의고사 📘</h1>
      <div class="sub">영어 기출 15문항 · 국어 비문학(독서) 17문항 — 이름을 선택하세요</div>
+     <a href="school.html" style="display:flex;justify-content:space-between;align-items:center;gap:10px;text-decoration:none;color:#1c2333;background:#fff7ed;border:2px solid #fdba74;border-radius:12px;padding:12px 14px;margin:6px 0 12px">
+       <span><b>📝 [특별] 신남중 1학년 2학기 중간고사 가채점</b><br><span class="small">10/6 영어 시험 답 입력 → 바로 채점 · 26문항 100점</span></span>
+       <span style="background:#c2410c;color:#fff;border-radius:8px;padding:8px 12px;font-weight:700;white-space:nowrap">입력하기 →</span>
+     </a>
      ${students.map(s=>`<button class="student-btn" onclick='pickStudent(${JSON.stringify(s)})'>${esc(s.name)}</button>`).join("") || '<div class="pill">등록된 학생이 없어요. 선생님 모드에서 학생을 추가하세요.</div>'}
      <div class="row"><button class="btn-ghost btn-sm" onclick="teacherLogin()">🔑 선생님</button></div>
    </div>`;
