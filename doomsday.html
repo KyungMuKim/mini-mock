@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Doomsday 재시험</title>
+<meta name="robots" content="noindex, nofollow">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{ --bg:#f3f2ef; --card:#fff; --ink:#16181d; --sub:#666b76; --pri:#9f1239; --pri-soft:#fff1f2; --dark:#18181b;
+         --ok:#15803d; --ok-soft:#dcfce7; --no:#b91c1c; --no-soft:#fee2e2; --amber:#b45309; --amber-soft:#fef3c7; --line:#e4e2dc; }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{font-family:'Apple SD Gothic Neo','Malgun Gothic',sans-serif; background:var(--bg); color:var(--ink); padding:16px; max-width:860px; margin:0 auto; line-height:1.5;}
+  .card{background:var(--card); border-radius:16px; padding:22px; box-shadow:0 2px 10px rgba(20,20,30,.06); margin-bottom:14px;}
+  .hero{background:var(--dark); color:#fafafa;}
+  .hero .sub{color:#a1a1aa;}
+  .eyebrow{font-size:.72rem; letter-spacing:.18em; font-weight:800; color:#fb7185; text-transform:uppercase;}
+  h1{font-size:1.5rem; margin:4px 0 6px;} h2{font-size:1.15rem; margin-bottom:8px;} h3{font-size:1rem; margin:14px 0 6px;}
+  .sub{color:var(--sub); font-size:.9rem; margin-bottom:12px;}
+  .small{color:var(--sub); font-size:.8rem;}
+  .pill{background:var(--pri-soft); border-radius:10px; padding:12px 14px; font-size:.93rem; margin:10px 0; line-height:1.6;}
+  .btn-primary{background:var(--pri); color:#fff; border:none; border-radius:10px; padding:13px 22px; font-size:1.05rem; font-weight:700; cursor:pointer; width:100%;}
+  .btn-primary:disabled{opacity:.45; cursor:default;}
+  .btn-ghost{background:#ecebe6; color:var(--ink); border:none; border-radius:10px; padding:10px 16px; font-size:.92rem; cursor:pointer; text-decoration:none; display:inline-block;}
+  .btn-sm{padding:6px 10px; font-size:.82rem; border-radius:8px;}
+  .row{display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; align-items:center;}
+  .row .btn-primary{flex:1; width:auto;}
+  .student-btn{display:inline-block; background:#f4f4f5; border:2px solid transparent; border-radius:12px; padding:13px 17px; margin:4px 3px; font-size:1.03rem; font-weight:700; cursor:pointer;}
+  .student-btn:hover{border-color:var(--pri);}
+  .progress{height:8px; background:var(--line); border-radius:4px; overflow:hidden; margin:8px 0 4px;}
+  .progress div{height:100%; background:var(--pri); transition:width .2s;}
+  .sec{margin-top:18px; padding:8px 12px; background:var(--dark); color:#fff; border-radius:8px; font-weight:800; font-size:.9rem; display:flex; justify-content:space-between;}
+  .orow{display:flex; align-items:center; gap:6px; padding:6px 0; border-bottom:1px solid var(--line);}
+  .orow .qn{width:38px; font-weight:800;}
+  .bub{flex:1; max-width:60px; padding:9px 0; font-size:1.08rem; font-weight:800; border:2px solid var(--line); border-radius:10px; background:#fff; cursor:pointer; text-align:center;}
+  .bub.sel{border-color:var(--pri); background:var(--pri); color:#fff;}
+  .score-big{font-size:2.3rem; font-weight:900;}
+  .arrow{color:var(--sub); font-size:1.4rem; margin:0 8px;}
+  .delta{font-weight:900; border-radius:8px; padding:3px 9px; font-size:1rem;}
+  .delta.up{background:var(--ok-soft); color:var(--ok);} .delta.down{background:var(--no-soft); color:var(--no);} .delta.eq{background:#f4f4f5; color:var(--sub);}
+  .oxgrid{display:grid; grid-template-columns:repeat(auto-fill,minmax(62px,1fr)); gap:6px; margin:10px 0;}
+  .ox{border-radius:8px; padding:6px 0; text-align:center; font-weight:800; font-size:.82rem; line-height:1.25;}
+  .ox small{display:block; font-weight:600; font-size:.7rem;}
+  .t-keep{background:var(--ok-soft); color:#166534;}
+  .t-fill{background:#15803d; color:#fff;}
+  .t-leak{background:var(--amber-soft); color:#92400e; outline:2px solid #f59e0b;}
+  .t-stuck{background:var(--no-soft); color:#991b1b;}
+  .legend{display:flex; gap:10px; flex-wrap:wrap; font-size:.78rem; color:var(--sub);}
+  .legend span::before{content:""; display:inline-block; width:11px; height:11px; border-radius:3px; margin-right:4px; vertical-align:-1px;}
+  .lg-keep::before{background:var(--ok-soft); border:1px solid #86efac;} .lg-fill::before{background:#15803d;}
+  .lg-leak::before{background:var(--amber-soft); border:1px solid #f59e0b;} .lg-stuck::before{background:var(--no-soft); border:1px solid #fca5a5;}
+  table{width:100%; border-collapse:collapse; font-size:.87rem; margin-top:8px;}
+  th,td{padding:7px 5px; border-bottom:1px solid var(--line); text-align:left; vertical-align:middle;}
+  th{color:var(--sub); font-weight:600; font-size:.76rem;}
+  td.num, th.num{text-align:right; font-variant-numeric:tabular-nums;}
+  .ok{color:var(--ok); font-weight:800;} .no{color:var(--no); font-weight:800;}
+  .statgrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:8px; margin:10px 0;}
+  .stat{background:#f7f6f2; border-radius:10px; padding:10px 12px;}
+  .stat b{display:block; font-size:1.35rem; font-variant-numeric:tabular-nums;} .stat span{font-size:.76rem; color:var(--sub);}
+  select{font-size:.92rem; padding:7px; border:2px solid var(--line); border-radius:9px; background:#fff; max-width:100%;}
+  .copybox{white-space:pre-wrap; background:#f7f6f2; border:1px solid var(--line); border-radius:10px; padding:14px; font-size:.86rem; line-height:1.7; margin:10px 0;}
+  details summary{cursor:pointer; font-weight:700; margin-top:14px;}
+  .keygrid{display:grid; grid-template-columns:repeat(auto-fill,minmax(92px,1fr)); gap:6px; margin-top:8px;}
+  .keygrid label{font-size:.8rem; display:flex; gap:4px; align-items:center;}
+
+  /* ---------- 학부모 리포트 ---------- */
+  .rep{background:#fff; max-width:800px; margin:0 auto; padding:34px 38px; border-radius:6px; box-shadow:0 2px 14px rgba(0,0,0,.08); font-size:.93rem;}
+  .rep-head{display:flex; justify-content:space-between; align-items:flex-end; border-bottom:3px solid var(--ink); padding-bottom:12px;}
+  .rep-head .t{font-size:1.55rem; font-weight:900; letter-spacing:-.02em;}
+  .rep-head .eyebrow{color:var(--pri);}
+  .rep-name{font-size:1.25rem; font-weight:900; text-align:right;}
+  .rep p{line-height:1.75; margin:8px 0;}
+  .rep h2{font-size:1.02rem; margin:24px 0 8px; padding-left:10px; border-left:4px solid var(--pri);}
+  .lead{background:#f7f6f2; border-radius:8px; padding:14px 16px; color:#33363d;}
+  .scorebar{display:grid; grid-template-columns:1fr auto 1fr auto; gap:10px; align-items:center; margin:12px 0;}
+  .sbox{border:1px solid var(--line); border-radius:10px; padding:12px 14px;}
+  .sbox .lab{font-size:.75rem; color:var(--sub); font-weight:700;}
+  .sbox .val{font-size:1.75rem; font-weight:900; font-variant-numeric:tabular-nums;}
+  .sbox .val span{font-size:.85rem; color:var(--sub); font-weight:600;}
+  .kpi{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:10px 0;}
+  .kpi div{border-radius:10px; padding:12px; text-align:center;}
+  .kpi b{display:block; font-size:1.6rem; font-variant-numeric:tabular-nums;}
+  .kpi span{font-size:.76rem;}
+  .qlist{display:grid; grid-template-columns:1fr 1fr; gap:6px 14px; margin-top:8px;}
+  .qitem{display:flex; gap:8px; align-items:center; font-size:.84rem; padding:5px 8px; border-radius:7px;}
+  .qitem .no{width:28px; font-weight:900; color:var(--ink);}
+  .qitem .tr{margin-left:auto; font-weight:800; white-space:nowrap; font-size:.8rem;}
+  .bars{margin:8px 0;}
+  .brow{display:grid; grid-template-columns:150px 1fr 90px; gap:10px; align-items:center; margin:7px 0; font-size:.85rem;}
+  .btrack{height:12px; background:#efeee9; border-radius:6px; position:relative; overflow:hidden;}
+  .btrack i{position:absolute; top:0; bottom:0; left:0; border-radius:6px;}
+  .comment{border:1.5px dashed #d4d0c6; border-radius:8px; padding:14px 16px; min-height:110px; line-height:1.8; outline:none; white-space:pre-wrap;}
+  .comment:focus{border-color:var(--pri); background:#fffafa;}
+  .rep-foot{margin-top:26px; padding-top:10px; border-top:1px solid var(--line); display:flex; justify-content:space-between; font-size:.75rem; color:var(--sub);}
+  .toolbar{max-width:800px; margin:0 auto 12px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;}
+
+  @media (max-width:560px){
+    .rep{padding:22px 16px;} .qlist{grid-template-columns:1fr;} .brow{grid-template-columns:96px 1fr 70px;}
+    .scorebar{grid-template-columns:1fr; } .scorebar .arrow{display:none;}
+    .kpi{grid-template-columns:1fr 1fr 1fr;} .kpi b{font-size:1.25rem;}
+  }
+  @media print{
+    @page{size:A4; margin:12mm;}
+    body{background:#fff; padding:0; max-width:none;}
+    .noprint{display:none !important;}
+    .rep{box-shadow:none; padding:0; max-width:none; border-radius:0;}
+    .comment{border:1px solid #d4d0c6;}
+    .rep h2, .qlist, .kpi, .scorebar{break-inside:avoid;}
+    *{-webkit-print-color-adjust:exact; print-color-adjust:exact;}
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+/* ============================================================
+   Doomsday(심판의 날) 재시험 — 씨앤씨 3분기 진단평가
+   - 듣기 1~30번은 1차 결과 유지, 31~85번(문법 15 + 독해 40)만 재응시
+   - 점수 = 240 + Σ(정답 문항 배점)  ← 씨앤씨 성적표 공식 (9명 전원 검산 일치)
+   - 정답·1차 성적·답안은 RLS로 직접 접근 차단. 채점·조회는 전부 서버 RPC
+     (dd_status / dd_submit / dd_teacher / dd_reset / dd_set_key)
+   - 학생에게는 정답을 보여주지 않음 (같은 교실에서 순차 제출하므로 유출 방지)
+   - 선생님 비밀번호는 teacher_pin_verify RPC로만 검증 (클라이언트 하드코딩 금지)
+   ============================================================ */
+const CONFIG = {
+  SUPABASE_URL: "https://xtxuozcbeqruuigeijsz.supabase.co",
+  SUPABASE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh0eHVvemNiZXFydXVpZ2VpanN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMxNjI4MzMsImV4cCI6MjA5ODczODgzM30.kuHunWODG6_lv3JajIMmr6Xw7yEORy-Dixs-EB4sYaM",
+  EXCLUDE_NAMES: ["실험용","실험","테스트","test","딘","안성민","서승원"]
+};
+const sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_KEY);
+const app = document.getElementById("app");
+const CN = ["","①","②","③","④","⑤"];
+const SECTIONS = [
+  {name:"Grammar", from:31, to:45},
+  {name:"RC 일반", from:46, to:57},
+  {name:"RC 수능", from:58, to:69},
+  {name:"RC 추론", from:70, to:85}
+];
+const QNOS = []; for(let n=31;n<=85;n++) QNOS.push(n);
+const esc = s => String(s??"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const f1 = v => (Math.round(Number(v)*10)/10).toFixed(1);
+const isExcluded = name => CONFIG.EXCLUDE_NAMES.includes((name||"").trim());
+const sum = a => a.reduce((s,v)=>s+v,0);
+const fmtDate = t => { const d=new Date(t); return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`; };
+const ERRMSG = { PIN_MISMATCH:"비밀번호가 달라요. 본인 이름이 맞는지 확인하고 다시 입력해 주세요.", ALREADY_SUBMITTED:"이미 제출했어요. 제출은 한 번만 할 수 있어요.",
+  EXAM_CLOSED:"재시험 입력이 마감됐어요.", NO_BASELINE:"1차 시험 기록이 없는 학생이에요. 선생님께 말씀해 주세요.", TEACHER_PIN_MISMATCH:"비밀번호가 달라요" };
+const niceErr = e => { const m=(e&&e.message)||String(e); const k=Object.keys(ERRMSG).find(k=>m.includes(k)); return k?ERRMSG[k]:"오류: "+m; };
+const store = { get(k){ try{ return JSON.parse(localStorage.getItem(k)); }catch(e){ return null; } },
+                set(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} },
+                del(k){ try{ localStorage.removeItem(k); }catch(e){} } };
+/* 1차/2차 문항 상태 (31~85 기준 문자열 인덱스 = no-31) */
+const trans = (a,b) => a==="O" ? (b==="O"?"keep":"leak") : (b==="O"?"fill":"stuck");
+const TLABEL = { keep:"지켜냄", fill:"메움", leak:"샘", stuck:"아직 구멍" };
+
+let S = {}, T = {}, EXAM = null;
+
+/* ================= 학생 ================= */
+async function home(){
+  app.innerHTML = `<div class="card hero"><div class="eyebrow">Doomsday</div><h1>심판의 날 재시험</h1><div class="sub">불러오는 중...</div></div>`;
+  const { data: exams, error } = await sb.rpc("dd_exam_public");
+  if(error) return app.innerHTML = `<div class="card"><h2>불러오지 못했어요</h2><div class="sub">${esc(error.message)}</div><a class="btn-ghost btn-sm" href="./">← 미니모의고사로</a></div>`;
+  EXAM = (exams||[])[0];
+  if(!EXAM){ app.innerHTML = `<div class="card hero"><div class="eyebrow">Doomsday</div><h1>심판의 날 재시험</h1><div class="sub">지금 열려 있는 재시험이 없어요.</div></div>
+    <div class="row"><a class="btn-ghost btn-sm" href="./">← 미니모의고사로</a><button class="btn-ghost btn-sm" onclick="teacherLogin()">🔑 선생님</button></div>`; return; }
+  const { data: roster, error: e2 } = await sb.rpc("dd_roster", { p_exam: EXAM.id });
+  if(e2) return alert(niceErr(e2));
+  app.innerHTML = `
+  <div class="card hero">
+    <div class="eyebrow">Doomsday · 심판의 날</div>
+    <h1>${esc(EXAM.label)}</h1>
+    <div class="sub" style="margin:0">배운 것을 얼마나 지켜냈는지 확인하는 날이에요.<br>
+    듣기(1~30번)는 1차 점수를 그대로 두고, <b style="color:#fff">31~85번(문법 15 + 독해 40)</b>만 다시 풀어요.</div>
+  </div>
+  <div class="card">
+    <h2>이름을 선택하세요</h2>
+    ${(roster||[]).map(s=>`<button class="student-btn" onclick='pickStudent(${JSON.stringify({id:s.student_id,name:s.name})})'>${esc(s.name)}</button>`).join("") || '<div class="pill">재시험 대상 학생이 없어요.</div>'}
+    <div class="row"><a class="btn-ghost btn-sm" href="./">← 미니모의고사로</a><button class="btn-ghost btn-sm" onclick="teacherLogin()">🔑 선생님</button></div>
+  </div>`;
+}
+window.pickStudent = function(student){
+  app.innerHTML = `<div class="card">
+    <h2>본인 확인</h2>
+    <div class="sub">아래 이름이 <b>본인</b>이 맞는지 확인하고, <b>비밀번호 4자리</b>를 입력하세요.</div>
+    <div style="font-size:2.1rem; font-weight:900; text-align:center; margin:14px 0">${esc(student.name)}</div>
+    <div class="row" style="justify-content:center">
+      <input type="password" id="pinInput" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" placeholder="비밀번호 4자리"
+        style="text-align:center; font-size:1.3rem; letter-spacing:.35em; width:190px; padding:10px; border:2px solid #cbd5e1; border-radius:10px">
+    </div>
+    <div class="row"><button class="btn-primary" id="pinBtn">네, ${esc(student.name)} 입니다 →</button></div>
+    <div class="row"><button class="btn-ghost btn-sm" onclick="home()">← 아니에요, 이름 다시 선택</button></div>
+  </div>`;
+  const inp = document.getElementById("pinInput");
+  document.getElementById("pinBtn").onclick = ()=>pinGo(student);
+  inp.focus(); inp.addEventListener("keydown", e=>{ if(e.key==="Enter") pinGo(student); });
+};
+async function pinGo(student){
+  const inp = document.getElementById("pinInput");
+  const pin = (inp && inp.value || "").trim();
+  if(!/^\d{4}$/.test(pin)){ alert("비밀번호 4자리(숫자)를 입력하세요"); inp&&inp.focus(); return; }
+  document.querySelectorAll("button").forEach(b=>b.disabled=true);
+  const { data, error } = await sb.rpc("dd_status", { p_exam: EXAM.id, p_student: student.id, p_pin: pin });
+  document.querySelectorAll("button").forEach(b=>b.disabled=false);
+  if(error){ inp.value=""; inp.focus(); return alert(niceErr(error)); }
+  S = { student, pin, status: data };
+  if(data && data.submitted) return resultScreen(data, true);
+  const d = store.get("dd_draft_"+student.id);
+  S.answers = (d && d.exam===EXAM.id && d.answers) || {};
+  S.startedAt = (d && d.startedAt) || Date.now();
+  omr();
+}
+function omr(){
+  const done = QNOS.filter(n=>S.answers[n]).length;
+  app.innerHTML = `<div class="card">
+    <h2>${esc(S.student.name)} · 재시험 답 입력</h2>
+    <div class="sub">시험지에 표시한 답을 그대로 눌러 주세요. 다시 누르면 취소돼요.<br><b>제출은 한 번만</b> 할 수 있으니 꼼꼼히 확인하고 제출해요. 입력하던 답은 이 기기에 임시 저장돼요.</div>
+    <div class="progress"><div style="width:${(done/QNOS.length*100).toFixed(0)}%"></div></div>
+    <div class="small">${done}/${QNOS.length} 입력</div>
+    ${SECTIONS.map(sec=>`<div class="sec"><span>${sec.name}</span><span>${sec.from}–${sec.to}번</span></div>` +
+      QNOS.filter(n=>n>=sec.from&&n<=sec.to).map(n=>`<div class="orow"><span class="qn">${n}</span>
+        ${[1,2,3,4,5].map(c=>`<button class="bub ${S.answers[n]===c?"sel":""}" onclick="pick(${n},${c})">${CN[c]}</button>`).join("")}</div>`).join("")).join("")}
+    <div class="row"><button class="btn-primary" onclick="submitOmr()">제출하고 채점하기 ⚖️</button></div>
+    <div class="row"><button class="btn-ghost btn-sm" onclick="home()">← 처음으로</button></div>
+  </div>`;
+}
+window.pick = function(n, c){
+  if(S.answers[n]===c) delete S.answers[n]; else S.answers[n]=c;
+  store.set("dd_draft_"+S.student.id, { exam: EXAM.id, answers: S.answers, startedAt: S.startedAt });
+  const y = window.scrollY; omr(); window.scrollTo(0, y);
+};
+window.submitOmr = async function(){
+  const blank = QNOS.filter(n=>!S.answers[n]);
+  const msg = blank.length ? `아직 안 고른 문항이 ${blank.length}개 있어요: ${blank.join(", ")}번\n빈 칸은 틀린 것으로 채점돼요.\n\n` : "";
+  if(!confirm(msg + "제출할까요? 제출 후에는 고칠 수 없어요.")) return;
+  app.innerHTML = `<div class="card"><h2>채점 중...</h2></div>`;
+  const { data, error } = await sb.rpc("dd_submit", { p_exam: EXAM.id, p_student: S.student.id, p_pin: S.pin,
+    p_answers: S.answers, p_duration: Math.round((Date.now()-S.startedAt)/1000) });
+  if(error){ alert(niceErr(error)); return omr(); }
+  store.del("dd_draft_"+S.student.id);
+  resultScreen(data, false);
+};
+function resultScreen(r, revisit){
+  const d = Number(r.score2) - Number(r.score1);
+  const cnt = (s,a,b) => [...s].slice(a-31,b-30).filter(c=>c==="O").length;
+  const t = { keep:0, fill:0, leak:0, stuck:0 };
+  QNOS.forEach((n,i)=>t[trans(r.ox1[i], r.ox2[i])]++);
+  app.innerHTML = `<div class="card hero">
+    <div class="eyebrow">Doomsday 결과</div>
+    <h1>${esc(S.student.name)}</h1>
+    ${revisit?`<div class="sub">${fmtDate(r.taken_at)}에 제출한 결과예요.</div>`:""}
+    <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-top:6px">
+      <span class="score-big" style="color:#a1a1aa">${f1(r.score1)}</span><span class="arrow">→</span>
+      <span class="score-big">${f1(r.score2)}</span><span class="small" style="color:#a1a1aa;margin:0 8px">/ 600</span>
+      <span class="delta ${d>0?"up":d<0?"down":"eq"}">${d>0?"+":""}${f1(d)}</span>
+    </div>
+    <div class="sub" style="margin-top:6px">듣기 ${f1(r.lc_kept)}점은 1차 결과 그대로예요.</div>
+  </div>
+  <div class="card">
+    <div class="statgrid">
+      <div class="stat"><b>${cnt(r.ox1,31,45)} → ${cnt(r.ox2,31,45)}</b><span>문법 맞은 개수 / 15</span></div>
+      <div class="stat"><b>${cnt(r.ox1,46,85)} → ${cnt(r.ox2,46,85)}</b><span>독해 맞은 개수 / 40</span></div>
+      <div class="stat"><b>${t.fill}</b><span>새로 메운 문항</span></div>
+      <div class="stat"><b>${t.leak}</b><span>1차엔 맞았는데 놓친 문항</span></div>
+    </div>
+    <div class="legend"><span class="lg-keep">지켜냄 ○→○</span><span class="lg-fill">메움 ✕→○</span><span class="lg-leak">샘 ○→✕</span><span class="lg-stuck">아직 구멍 ✕→✕</span></div>
+    <div class="oxgrid">${QNOS.map((n,i)=>{ const k=trans(r.ox1[i], r.ox2[i]); return `<div class="ox t-${k}">${n}<small>${TLABEL[k]}</small></div>`; }).join("")}</div>
+    <div class="pill">${t.leak ? `노란 칸은 1차에 맞혔는데 이번에 놓친 문항이에요. 알고 있던 것도 다시 새어 나갈 수 있다는 신호니까, 오늘 꼭 다시 확인해요.` :
+      t.stuck ? `빨간 칸이 아직 메우지 못한 구멍이에요. 다음 수업 전에 한 번 더 들여다봐요.` : `빈틈없이 지켜냈어요. 정말 잘했어요!`}</div>
+    <div class="small">정답과 해설은 수업 시간에 함께 확인해요.</div>
+    <div class="row"><button class="btn-primary" onclick="home()">처음으로</button></div>
+  </div>`;
+  window.scrollTo(0,0);
+}
+
+/* ================= 선생님 ================= */
+function askPin(label){
+  return new Promise(res=>{
+    const ov = document.createElement("div");
+    ov.style.cssText = "position:fixed;inset:0;background:rgba(15,15,20,.6);display:flex;align-items:center;justify-content:center;z-index:9999";
+    ov.innerHTML = `<div style="background:#fff;border-radius:16px;padding:24px;width:280px">
+      <div style="font-weight:800;margin-bottom:10px">${label}</div>
+      <input id="_pinAsk" type="password" inputmode="numeric" maxlength="4" autocomplete="off"
+        style="width:100%;text-align:center;font-size:1.3rem;letter-spacing:.35em;padding:10px;border:2px solid #cbd5e1;border-radius:10px">
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <button id="_pinCancel" class="btn-ghost" style="flex:1">취소</button>
+        <button id="_pinOk" class="btn-primary" style="flex:1;padding:11px">확인</button>
+      </div></div>`;
+    document.body.appendChild(ov);
+    const inp = ov.querySelector("#_pinAsk");
+    const done = v => { ov.remove(); res(v); };
+    ov.querySelector("#_pinOk").onclick = ()=>done(inp.value.trim());
+    ov.querySelector("#_pinCancel").onclick = ()=>done(null);
+    inp.addEventListener("keydown", e=>{ if(e.key==="Enter") done(inp.value.trim()); });
+    inp.focus();
+  });
+}
+window.teacherLogin = async function(){
+  const pin = await askPin("선생님 비밀번호");
+  if(pin === null) return;
+  if(!EXAM){ const { data } = await sb.rpc("dd_exam_public"); EXAM = (data||[])[0]; }
+  if(!EXAM) return alert("열린 재시험이 없어요");
+  T = { pin };
+  const ok = await loadT();
+  if(!ok){ T = {}; return; }
+  dash();
+  clearInterval(window._ddTimer);
+  window._ddTimer = setInterval(async ()=>{ if(T.view==="dash" && document.visibilityState==="visible"){ await loadT(); dash(); } }, 20000);
+};
+async function loadT(){
+  const { data, error } = await sb.rpc("dd_teacher", { p_pin: T.pin, p_exam: EXAM.id });
+  if(error){ alert(niceErr(error)); return false; }
+  T.exam = data.exam; T.students = data.students || [];
+  T.q = {}; T.exam.questions.forEach(q=>T.q[q.no]=q);
+  T.focus = T.exam.focus || [];
+  return true;
+}
+/* 학생 1명 분석 */
+function analyze(st){
+  const a = st.attempt;
+  const ox1 = st.ox1.slice(30);                   // 31~85
+  const ox2 = a ? a.ox2 : null;
+  const pts = n => Number(T.q[n].pts);
+  const secPts = (ox, from, to) => QNOS.filter(n=>n>=from&&n<=to&&ox[n-31]==="O").reduce((s,n)=>s+pts(n),0);
+  const cnt = (ox, list) => list.filter(n=>ox[n-31]==="O").length;
+  const focus = T.focus, rest = QNOS.filter(n=>!focus.includes(n));
+  const r = { st, done: !!a, ox1, ox2, score1:Number(st.score1), lc:Number(st.lc_kept),
+    gr1: secPts(ox1,31,45), rc1: secPts(ox1,46,85),
+    f1: cnt(ox1, focus), rest1: cnt(ox1, rest), nFocus: focus.length, nRest: rest.length,
+    grc1: cnt(ox1, QNOS.filter(n=>n<=45)), rcc1: cnt(ox1, QNOS.filter(n=>n>=46)) };
+  if(a){
+    r.score2 = Number(a.score2); r.delta = r.score2 - r.score1;
+    r.gr2 = secPts(ox2,31,45); r.rc2 = secPts(ox2,46,85);
+    r.f2 = cnt(ox2, focus); r.rest2 = cnt(ox2, rest);
+    r.grc2 = cnt(ox2, QNOS.filter(n=>n<=45)); r.rcc2 = cnt(ox2, QNOS.filter(n=>n>=46));
+    r.ft = { keep:[], fill:[], leak:[], stuck:[] }; focus.forEach(n=>r.ft[trans(ox1[n-31], ox2[n-31])].push(n));
+    r.rt = { keep:[], fill:[], leak:[], stuck:[] }; rest.forEach(n=>r.rt[trans(ox1[n-31], ox2[n-31])].push(n));
+    const holes = r.ft.fill.length + r.ft.stuck.length;
+    r.fillRate = holes ? r.ft.fill.length/holes : null;          // 해설 문항 중 1차 오답을 메운 비율
+    const kept = r.ft.keep.length + r.ft.leak.length;
+    r.keepRate = kept ? r.ft.keep.length/kept : null;             // 1차 정답을 지켜낸 비율
+    r.duration = a.duration_sec;
+  }
+  return r;
+}
+const pct = v => v==null ? "–" : Math.round(v*100)+"%";
+function classStats(){
+  const rs = T.students.filter(s=>!isExcluded(s.name)).map(analyze);
+  const done = rs.filter(r=>r.done);
+  const avg = (arr, k) => arr.length ? sum(arr.map(r=>r[k]))/arr.length : null;
+  const fills = done.filter(r=>r.fillRate!=null);
+  return { rs, done, n: rs.length, avg1: avg(rs,"score1"), avg1d: avg(done,"score1"), avg2: avg(done,"score2"), avgD: avg(done,"delta"),
+    avgFill: fills.length ? sum(fills.map(r=>r.fillRate))/fills.length : null };
+}
+window.dash = function(){
+  T.view = "dash";
+  const C = classStats();
+  const all = T.students.map(analyze);
+  const focusRows = T.focus.map(n=>{
+    const ds = C.done; const c = { keep:0, fill:0, leak:0, stuck:0 };
+    ds.forEach(r=>c[trans(r.ox1[n-31], r.ox2[n-31])]++);
+    const o1 = C.rs.filter(r=>r.ox1[n-31]==="O").length;
+    const o2 = ds.filter(r=>r.ox2[n-31]==="O").length;
+    const o1d = ds.filter(r=>r.ox1[n-31]==="O").length;
+    return { n, c, o1, o2, o1d, nd: ds.length };
+  });
+  const summary = `[Doomsday 재시험] ${new Date().getMonth()+1}/${new Date().getDate()} 기준 · 응시 ${C.done.length}/${C.n}명
+평균 ${C.avg1d!=null?f1(C.avg1d):"-"} → ${C.avg2!=null?f1(C.avg2):"-"} (${C.avgD!=null?(C.avgD>=0?"+":"")+f1(C.avgD):"-"}) · 해설 문항 평균 메움률 ${pct(C.avgFill)}
+학생별: ${C.done.slice().sort((a,b)=>b.delta-a.delta).map(r=>`${r.st.name} ${f1(r.score1)}→${f1(r.score2)}(${r.delta>=0?"+":""}${f1(r.delta)})`).join(", ")}`;
+  app.innerHTML = `<div class="card hero">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+      <div><div class="eyebrow">Doomsday · 선생님</div><h1>재시험 현황</h1></div>
+      <div class="row" style="margin:0"><button class="btn-ghost btn-sm" onclick="refresh()">↻ 새로고침</button><button class="btn-ghost btn-sm" onclick="T={};home()">나가기</button></div>
+    </div>
+    <div class="sub" style="margin:0">${esc(T.exam.label)} · 20초마다 자동 새로고침 · 해설 문항 ${T.focus.length}개 (문법 ${T.focus.filter(n=>n<=45).length} + 독해 ${T.focus.filter(n=>n>45).map(n=>n+"번").join("·")})</div>
+  </div>
+  <div class="card">
+    <div class="statgrid">
+      <div class="stat"><b>${C.done.length}/${C.n}</b><span>응시 인원</span></div>
+      <div class="stat"><b>${C.avg1d!=null?f1(C.avg1d):"-"}</b><span>응시자 1차 평균</span></div>
+      <div class="stat"><b>${C.avg2!=null?f1(C.avg2):"-"}</b><span>재시험 평균</span></div>
+      <div class="stat"><b>${C.avgD!=null?(C.avgD>=0?"+":"")+f1(C.avgD):"-"}</b><span>평균 변화</span></div>
+      <div class="stat"><b>${pct(C.avgFill)}</b><span>해설 문항 평균 메움률</span></div>
+    </div>
+    <h2 style="margin-top:14px">학생별</h2>
+    <table><tr><th>학생</th><th class="num">1차</th><th class="num">재시험</th><th class="num">변화</th><th class="num">해설 ${T.focus.length}문항</th><th class="num">메움/샘</th><th class="num">기타 ${QNOS.length-T.focus.length}문항</th><th></th></tr>
+    ${all.map(r=>`<tr>
+      <td><b>${esc(r.st.name)}</b>${isExcluded(r.st.name)?' <span class="small">(통계 제외)</span>':""}</td>
+      <td class="num">${f1(r.score1)}</td>
+      <td class="num">${r.done?`<b>${f1(r.score2)}</b>`:'<span class="small">미응시</span>'}</td>
+      <td class="num">${r.done?`<span class="delta ${r.delta>0?"up":r.delta<0?"down":"eq"}" style="font-size:.8rem">${r.delta>0?"+":""}${f1(r.delta)}</span>`:""}</td>
+      <td class="num">${r.f1}${r.done?` → <b>${r.f2}</b>`:""}</td>
+      <td class="num">${r.done?`<span class="ok">+${r.ft.fill.length}</span> / <span class="no">−${r.ft.leak.length}</span>`:""}</td>
+      <td class="num">${r.rest1}${r.done?` → ${r.rest2}`:""}</td>
+      <td style="white-space:nowrap">${r.done?`<button class="btn-ghost btn-sm" onclick='report("${r.st.student_id}")'>📄 리포트</button> <button class="btn-ghost btn-sm" title="재시험 기록 삭제" onclick='resetOne("${r.st.student_id}","${esc(r.st.name)}")'>↺</button>`:""}</td></tr>`).join("")}
+    </table>
+
+    <h2 style="margin-top:18px">해설 문항별 추이 <span class="small">(응시자 기준 · 통계 제외 계정 빼고)</span></h2>
+    <table><tr><th>문항</th><th>포인트</th><th class="num">1차 정답</th><th class="num">재시험 정답</th><th class="num">메움</th><th class="num">샘</th><th class="num">구멍</th></tr>
+    ${focusRows.map(f=>`<tr><td><b>${f.n}</b></td><td class="small">${esc(T.q[f.n].tag||"")}</td>
+      <td class="num">${f.o1d}/${f.nd}</td><td class="num"><b>${f.o2}/${f.nd}</b></td>
+      <td class="num ok">${f.c.fill||""}</td><td class="num no">${f.c.leak||""}</td><td class="num">${f.c.stuck||""}</td></tr>`).join("")}
+    </table>
+
+    <h2 style="margin-top:18px">요약 (복사용)</h2>
+    <div class="copybox" id="sum">${esc(summary)}</div>
+    <div class="row"><button class="btn-primary" onclick="navigator.clipboard.writeText(document.getElementById('sum').innerText).then(()=>alert('복사했어요'))">📋 요약 복사</button></div>
+
+    <details><summary>정답표 확인·수정 (수정하면 제출된 답안 전원 자동 재채점)</summary>
+      <div class="small" style="margin-top:6px">진단평가 정답표_교사용 기준. 공식 정답지와 다르면 여기서 고치세요.</div>
+      <div class="keygrid">${QNOS.map(n=>`<label><b>${n}</b><select onchange="setKey(${n}, Number(this.value), this)">${[1,2,3,4,5].map(c=>`<option value="${c}" ${T.q[n].ans===c?"selected":""}>${CN[c]}</option>`).join("")}</select></label>`).join("")}</div>
+    </details>
+  </div>`;
+};
+window.refresh = async function(){ if(await loadT()) dash(); };
+window.resetOne = async function(id, name){
+  if(!confirm(`${name} 학생의 재시험 기록을 지울까요? 지우면 다시 응시할 수 있어요.`)) return;
+  const { error } = await sb.rpc("dd_reset", { p_pin: T.pin, p_exam: EXAM.id, p_student: id });
+  if(error) return alert(niceErr(error));
+  refresh();
+};
+window.setKey = async function(n, ans, el){
+  if(!confirm(`${n}번 정답을 ${CN[ans]}(으)로 바꾸고 전원 재채점할까요?`)){ el.value = T.q[n].ans; return; }
+  const { data, error } = await sb.rpc("dd_set_key", { p_pin: T.pin, p_exam: EXAM.id, p_no: n, p_ans: ans });
+  if(error){ el.value = T.q[n].ans; return alert(niceErr(error)); }
+  alert(`${n}번 정답 수정 · ${data}명 재채점 완료`);
+  refresh();
+};
+
+/* ================= 학부모 리포트 ================= */
+function autoComment(r){
+  const tagOf = n => `${n}번(${T.q[n].tag})`;
+  const p = [];
+  const name = r.st.name.length>=3 ? r.st.name.slice(1) : r.st.name;
+  if(r.delta > 0) p.push(`${name} 학생은 재시험에서 ${f1(r.score1)}점 → ${f1(r.score2)}점으로 ${f1(r.delta)}점 올랐습니다.`);
+  else if(r.delta < 0) p.push(`${name} 학생은 재시험에서 ${f1(r.score1)}점 → ${f1(r.score2)}점으로 ${f1(-r.delta)}점 낮아졌습니다.`);
+  else p.push(`${name} 학생은 재시험에서 1차와 같은 ${f1(r.score2)}점을 받았습니다.`);
+  const holes = r.ft.fill.length + r.ft.stuck.length;
+  if(holes===0) p.push(`수업에서 해설한 ${r.nFocus}문항은 1차부터 모두 맞혔고, 이번에도 ${r.ft.leak.length?`${r.ft.leak.length}문항을 제외하고 `:""}지켜냈습니다.`);
+  else if(r.fillRate>=0.8) p.push(`수업에서 해설한 문항 중 1차에 틀렸던 ${holes}문항 가운데 ${r.ft.fill.length}문항을 바로잡아, 배운 내용을 거의 빈틈없이 자기 것으로 만들었습니다.`);
+  else if(r.fillRate>=0.5) p.push(`수업에서 해설한 문항 중 1차에 틀렸던 ${holes}문항 가운데 ${r.ft.fill.length}문항을 바로잡았습니다. 절반 이상을 메웠지만 아직 남은 구멍이 있습니다.`);
+  else p.push(`수업에서 해설한 문항 중 1차에 틀렸던 ${holes}문항 가운데 ${r.ft.fill.length}문항만 바로잡았습니다. 해설을 들은 뒤 스스로 다시 정리하는 복습 과정이 더 필요합니다.`);
+  if(r.ft.leak.length) p.push(`특히 ${r.ft.leak.map(tagOf).join(", ")}은 1차에 맞혔다가 이번에 놓쳤습니다. 알고 있던 내용이 흔들리고 있다는 신호라 우선적으로 다시 짚겠습니다.`);
+  if(r.ft.stuck.length) p.push(`${r.ft.stuck.map(tagOf).join(", ")}은 해설 이후에도 아직 메워지지 않은 부분으로, 다음 수업에서 개별적으로 확인하겠습니다.`);
+  return p.join(" ");
+}
+window.report = function(id){
+  T.view = "report";
+  const C = classStats();
+  const r = analyze(T.students.find(s=>s.student_id===id));
+  if(!r.done) return alert("아직 재시험을 보지 않은 학생이에요");
+  const others = T.students.filter(s=>s.attempt);
+  const ck = "dd_comment_"+EXAM.id+"_"+id;
+  const comment = store.get(ck) || autoComment(r);
+  const qitem = n => { const k = trans(r.ox1[n-31], r.ox2[n-31]);
+    const mark = s => s==="O" ? "○" : "✕";
+    return `<div class="qitem t-${k}"><span class="no">${n}</span><span>${esc(T.q[n].tag)}</span><span class="tr">${mark(r.ox1[n-31])} → ${mark(r.ox2[n-31])}</span></div>`; };
+  const grF = T.focus.filter(n=>n<=45), rcF = T.focus.filter(n=>n>45);
+  const restN = r.nRest;
+  const focusGain = r.f2 - r.f1, restGain = r.rest2 - r.rest1;
+  const bar = (label, v1, v2, max, color) => `<div class="brow"><span>${label}</span>
+    <div><div class="btrack" style="margin-bottom:3px"><i style="width:${v1/max*100}%;background:#c9c5ba"></i></div>
+         <div class="btrack"><i style="width:${v2/max*100}%;background:${color}"></i></div></div>
+    <span class="num" style="text-align:right"><span class="small">${v1}</span> → <b>${v2}</b> <span class="small">/ ${max}</span></span></div>`;
+  const today = new Date(); const ds = `${today.getFullYear()}.${today.getMonth()+1}.${today.getDate()}`;
+  app.innerHTML = `
+  <div class="toolbar noprint">
+    <button class="btn-ghost btn-sm" onclick="T.view='dash';dash()">← 현황으로</button>
+    <select onchange="report(this.value)">${others.map(s=>`<option value="${s.student_id}" ${s.student_id===id?"selected":""}>${esc(s.name)}</option>`).join("")}</select>
+    <button class="btn-ghost btn-sm" onclick="resetComment('${id}')">코멘트 자동 초안으로</button>
+    <button class="btn-primary btn-sm" style="width:auto" onclick="window.print()">🖨 인쇄 / PDF 저장</button>
+    <span class="small">아래 '선생님 코멘트'는 클릭해서 고칠 수 있어요 (이 기기에 자동 저장)</span>
+  </div>
+  <div class="rep">
+    <div class="rep-head">
+      <div><div class="eyebrow">씨앤씨 특목영어 · Doomsday Report</div><div class="t">배운 것을 얼마나 지켜냈는가</div></div>
+      <div class="rep-name">${esc(r.st.name)}<div class="small" style="font-weight:600">1학년 Stanford · ${ds}</div></div>
+    </div>
+
+    <p class="lead" style="margin-top:16px">공부는 모두가 밑 빠진 독에 물을 붓고 있는 와중에, <b>밑을 가장 잘 메운 사람이 이기는 게임</b>입니다.
+    배운 것을 흘려보내고 방치하면 아무리 많이 부어도 성장하지 않습니다. 그래서 3분기 진단평가에서 듣기를 제외한 55문항(문법 15 · 독해 40)을
+    해설 수업 후 <b>같은 시험지로 다시</b> 풀게 했습니다. 이 리포트는 점수 자체보다, 수업에서 다룬 내용이 실제로 학생의 것이 되었는지를 보여드리기 위한 자료입니다.</p>
+
+    <h2>1. 최종 점수 변화</h2>
+    <div class="scorebar">
+      <div class="sbox"><div class="lab">1차 진단평가</div><div class="val">${f1(r.score1)} <span>/ 600</span></div></div>
+      <span class="arrow">→</span>
+      <div class="sbox" style="border-color:var(--ink)"><div class="lab">Doomsday 재시험</div><div class="val">${f1(r.score2)} <span>/ 600</span></div></div>
+      <span class="delta ${r.delta>0?"up":r.delta<0?"down":"eq"}" style="font-size:1.15rem">${r.delta>0?"+":""}${f1(r.delta)}</span>
+    </div>
+    <table>
+      <tr><th>영역</th><th class="num">1차</th><th class="num">재시험</th><th class="num">변화</th><th>비고</th></tr>
+      <tr><td>듣기 (1–30)</td><td class="num">${f1(r.lc)}</td><td class="num">${f1(r.lc)}</td><td class="num">–</td><td class="small">1차 결과 유지 (재응시 안 함)</td></tr>
+      <tr><td>문법 (31–45)</td><td class="num">${f1(r.gr1)}</td><td class="num"><b>${f1(r.gr2)}</b></td><td class="num">${r.gr2-r.gr1>=0?"+":""}${f1(r.gr2-r.gr1)}</td><td class="small">${r.grc1} → ${r.grc2}문항 / 15</td></tr>
+      <tr><td>독해 (46–85)</td><td class="num">${f1(r.rc1)}</td><td class="num"><b>${f1(r.rc2)}</b></td><td class="num">${r.rc2-r.rc1>=0?"+":""}${f1(r.rc2-r.rc1)}</td><td class="small">${r.rcc1} → ${r.rcc2}문항 / 40</td></tr>
+    </table>
+    <p class="small">※ 씨앤씨 성적표와 같은 방식(기본 240점 + 맞힌 문항 배점 합)으로 계산했습니다. 반 평균 변화: ${C.avgD!=null?(C.avgD>=0?"+":"")+f1(C.avgD)+"점":"–"} (응시 ${C.done.length}명)</p>
+
+    <h2>2. 수업에서 해설한 ${r.nFocus}문항 — 밑을 메웠는가</h2>
+    <div class="kpi">
+      <div style="background:#15803d;color:#fff"><b>${r.ft.fill.length}<span style="font-size:.9rem"> / ${r.ft.fill.length+r.ft.stuck.length}</span></b><span>메운 구멍 (1차 오답 → 정답)</span></div>
+      <div style="background:var(--ok-soft);color:#166534"><b>${r.ft.keep.length}<span style="font-size:.9rem"> / ${r.ft.keep.length+r.ft.leak.length}</span></b><span>지켜낸 문항 (1차 정답 유지)</span></div>
+      <div style="background:${r.ft.leak.length?"var(--amber-soft)":"#f4f4f5"};color:${r.ft.leak.length?"#92400e":"var(--sub)"}"><b>${r.ft.leak.length}</b><span>새어 나간 문항 (정답 → 오답)</span></div>
+    </div>
+    <p>해설 문항 정답 수 <b>${r.f1} → ${r.f2}</b> / ${r.nFocus} · 메움률 <b>${pct(r.fillRate)}</b>${C.avgFill!=null?` (반 평균 ${pct(C.avgFill)})`:""}</p>
+    <div class="legend" style="margin-top:4px"><span class="lg-keep">지켜냄 ○→○</span><span class="lg-fill">메움 ✕→○</span><span class="lg-leak">샘 ○→✕</span><span class="lg-stuck">아직 구멍 ✕→✕</span></div>
+    <h3>문법 ${grF.length}문항</h3>
+    <div class="qlist">${grF.map(qitem).join("")}</div>
+    <h3>독해 ${rcF.length}문항 <span class="small">(RC 수능 영역 최난도 — 반 정답률 50% 안팎)</span></h3>
+    <div class="qlist">${rcF.map(qitem).join("")}</div>
+
+    <h2>3. 해설한 문항 vs 해설하지 않은 문항</h2>
+    <p class="small" style="margin:0">같은 시험지를 다시 푼 것이므로 전체적으로 점수가 오르는 것은 자연스럽습니다. 그래서 수업에서 다룬 문항과 다루지 않은 문항의 변화를 나란히 비교합니다.</p>
+    <div class="bars">
+      ${bar(`해설한 ${r.nFocus}문항`, r.f1, r.f2, r.nFocus, "#9f1239")}
+      ${bar(`나머지 독해 ${restN}문항`, r.rest1, r.rest2, restN, "#52525b")}
+    </div>
+    <p class="small">위 막대 = 1차, 아래 막대 = 재시험. ${
+      (r.f1===r.nFocus && r.f2===r.nFocus) ? "해설 문항은 처음부터 끝까지 모두 맞혔습니다." :
+      `해설 문항 정답률 ${Math.round(r.f1/r.nFocus*100)}% → ${Math.round(r.f2/r.nFocus*100)}%, 나머지 문항 ${Math.round(r.rest1/restN*100)}% → ${Math.round(r.rest2/restN*100)}%.`}</p>
+
+    <h2>4. 선생님 코멘트</h2>
+    <div class="comment" contenteditable="true" id="cmt">${esc(comment)}</div>
+
+    <div class="rep-foot"><span>씨앤씨 특목영어 · Dean 선생님</span><span>1차: 2026년 3.1분기 영어 진단평가 · 재시험: ${ds}</span></div>
+  </div>`;
+  const cm = document.getElementById("cmt");
+  cm.addEventListener("input", ()=>store.set(ck, cm.innerText));
+  window.scrollTo(0,0);
+};
+window.resetComment = function(id){ store.del("dd_comment_"+EXAM.id+"_"+id); report(id); };
+
+home();
+</script>
+</body>
+</html>
