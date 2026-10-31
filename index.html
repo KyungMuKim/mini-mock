@@ -92,11 +92,12 @@ function gradeTabs(cur, fn){
 const SUBJECTS = [{s:"eng",name:"영어",icon:"📘"},{s:"kor",name:"국어",icon:"📗"}];
 let SUBJ = localStorage.getItem("mock_subj") || "eng";
 if(!SUBJECTS.some(x=>x.s===SUBJ)) SUBJ = "eng";
-const sname = s => (s==="kor" ? "국어" : "영어");
+const sname = s => (s==="kor" ? "국어" : s==="engfull" ? "영어 전체" : "영어");
 function setSubj(s){ SUBJ = (s==="kor"?"kor":"eng"); try{ localStorage.setItem("mock_subj", SUBJ); }catch(e){} }
 function subjTabs(cur, fn){
   return `<div class="row" style="gap:6px;margin-bottom:8px">` + SUBJECTS.map(x=>
-    `<button class="${x.s===cur?"btn-primary":"btn-ghost"} btn-sm" onclick="${fn}('${x.s}')">${x.icon} ${x.name}</button>`).join("") + `</div>`;
+    `<button class="${x.s===cur?"btn-primary":"btn-ghost"} btn-sm" onclick="${fn}('${x.s}')">${x.icon} ${x.name}</button>`).join("")
+    + `<a class="btn-ghost btn-sm" style="text-decoration:none" href="full.html${String(fn).startsWith("dash")?"#teacher":""}">📕 고3 전체 모의고사 →</a></div>`;  /* 전체 모의고사는 별도 페이지(full.html) */
 }
 const QTYPE = {20:"주장",21:"함축의미",22:"요지",23:"주제",24:"제목",31:"빈칸",32:"빈칸",33:"빈칸",34:"빈칸",35:"무관문장",36:"순서",37:"순서",38:"문장삽입",39:"문장삽입",40:"요약"};
 /* ---- 국어: 회차별 지문 세트 [[시작번호, 끝번호, 제재, 이미지파일], ...] ---- */
@@ -183,6 +184,10 @@ async function home(){
    <div class="card">
      <h1>미니모의고사 📘</h1>
      <div class="sub">영어 기출 15문항 · 국어 비문학(독서) 17문항 — 이름을 선택하세요</div>
+     <a href="full.html" style="display:flex;justify-content:space-between;align-items:center;gap:10px;text-decoration:none;color:#1c2333;background:#f5f3ff;border:2px solid #c4b5fd;border-radius:12px;padding:12px 14px;margin:6px 0 12px">
+       <span><b>📕 고3 영어 전체 모의고사</b><br><span class="small">학평·모평 기출 45문항 · 듣기 포함 · 70분</span></span>
+       <span style="background:#7c3aed;color:#fff;border-radius:8px;padding:8px 12px;font-weight:700;white-space:nowrap">풀러 가기 →</span>
+     </a>
      <!-- 2026-10-27 비활성(Dean): 지난 이벤트 배너 2개(Doomsday 10/8, 신남중 가채점 10/6). 페이지(doomsday.html·school.html)는 그대로 — 다시 쓰려면 주석만 풀기
      <a href="doomsday.html" style="display:flex;justify-content:space-between;align-items:center;gap:10px;text-decoration:none;color:#fafafa;background:#18181b;border:2px solid #9f1239;border-radius:12px;padding:12px 14px;margin:6px 0 8px">
        <span><b>⚖️ [Doomsday] 씨앤씨 진단평가 재시험</b><br><span style="font-size:.8rem;color:#a1a1aa">10/8 · 31~85번(문법 15 + 독해 40) 답 입력 · 듣기는 1차 점수 유지</span></span>
@@ -437,6 +442,7 @@ window.teacherLogin = async function(){
   if(error){ return alert("비밀번호 확인 실패: " + error.message); }
   if(!ok){ return alert("비밀번호가 달라요"); }
   T = { tab:"live" };
+  try{ sessionStorage.setItem("full_teacher_ok","1"); }catch(e){}   /* 전체 모의고사 선생님 화면으로 넘어갈 때 재입력 생략 */
   sb.channel("mock_dash")
     .on("postgres_changes",{event:"*",schema:"public",table:"mock_attempts"}, ()=>{ if(T.tab==="live") dashLive(); })
     .subscribe();
@@ -451,6 +457,7 @@ function dashShell(inner){
        <div class="tab ${T.tab==="exam"?"on":""}" onclick="dashExam()">📊 회차 통계</div>
        <div class="tab ${T.tab==="students"?"on":""}" onclick="dashStudents()">👥 학생</div>
        <div class="tab ${T.tab==="report"?"on":""}" onclick="dashReport()">📨 학부모 리포트</div>
+       <a class="tab" href="full.html#teacher" style="text-decoration:none;color:inherit">📕 전체 모의고사</a>
      </div>
      ${inner}
    </div>`;
@@ -530,8 +537,9 @@ window.dashStudentDetail = async function(student){
   T.tab="students";
   const exams = await getAllExams();
   const byId = Object.fromEntries(exams.map(e=>[e.id,e]));
-  const { data: atts, error } = await sb.from("mock_attempts").select("*").eq("student_id", student.id).order("taken_at");
+  let { data: atts, error } = await sb.from("mock_attempts").select("*").eq("student_id", student.id).order("taken_at");
   if(error) err(error);
+  atts = (atts||[]).filter(a=>a.exam_id in byId);   /* 전체 모의고사(full.html) 기록은 그쪽 대시보드에서 */
   const attIds = (atts||[]).map(a=>a.id);
   let items = [];
   if(attIds.length){
