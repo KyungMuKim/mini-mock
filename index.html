@@ -97,7 +97,7 @@ function setSubj(s){ SUBJ = (s==="kor"?"kor":"eng"); try{ localStorage.setItem("
 function subjTabs(cur, fn){
   return `<div class="row" style="gap:6px;margin-bottom:8px">` + SUBJECTS.map(x=>
     `<button class="${x.s===cur?"btn-primary":"btn-ghost"} btn-sm" onclick="${fn}('${x.s}')">${x.icon} ${x.name}</button>`).join("")
-    + `<a class="btn-ghost btn-sm" style="text-decoration:none" href="full.html${String(fn).startsWith("dash")?"#teacher":""}">📕 고3 전체 모의고사 →</a></div>`;  /* 전체 모의고사는 별도 페이지(full.html) */
+    + `<a class="btn-ghost btn-sm" style="text-decoration:none" href="full.html${String(fn).startsWith("dash")?"#teacher":""}">📕 영어 전체 →</a><a class="btn-ghost btn-sm" style="text-decoration:none" href="fullk.html${String(fn).startsWith("dash")?"#teacher":""}">📗 국어 전체 →</a></div>`;  /* 전체 모의고사는 별도 페이지(full.html·fullk.html) */
 }
 const QTYPE = {20:"주장",21:"함축의미",22:"요지",23:"주제",24:"제목",31:"빈칸",32:"빈칸",33:"빈칸",34:"빈칸",35:"무관문장",36:"순서",37:"순서",38:"문장삽입",39:"문장삽입",40:"요약"};
 /* ---- 국어: 회차별 지문 세트 [[시작번호, 끝번호, 제재, 이미지파일], ...] ---- */
@@ -187,6 +187,10 @@ async function home(){
      <a href="full.html" style="display:flex;justify-content:space-between;align-items:center;gap:10px;text-decoration:none;color:#1c2333;background:#f5f3ff;border:2px solid #c4b5fd;border-radius:12px;padding:12px 14px;margin:6px 0 12px">
        <span><b>📕 고3 영어 전체 모의고사</b><br><span class="small">학평·모평 기출 45문항 · 듣기 포함 · 70분</span></span>
        <span style="background:#7c3aed;color:#fff;border-radius:8px;padding:8px 12px;font-weight:700;white-space:nowrap">풀러 가기 →</span>
+     </a>
+     <a href="fullk.html" style="display:flex;justify-content:space-between;align-items:center;gap:10px;text-decoration:none;color:#1c2333;background:#ecfdf5;border:2px solid #6ee7b7;border-radius:12px;padding:12px 14px;margin:6px 0 12px">
+       <span><b>📗 고3 국어 전체 모의고사</b><br><span class="small">학평·모평 기출 45문항 · 공통+선택(언어와 매체) · 80분</span></span>
+       <span style="background:#0f9d8a;color:#fff;border-radius:8px;padding:8px 12px;font-weight:700;white-space:nowrap">풀러 가기 →</span>
      </a>
      <!-- 2026-10-27 비활성(Dean): 지난 이벤트 배너 2개(Doomsday 10/8, 신남중 가채점 10/6). 페이지(doomsday.html·school.html)는 그대로 — 다시 쓰려면 주석만 풀기
      <a href="doomsday.html" style="display:flex;justify-content:space-between;align-items:center;gap:10px;text-decoration:none;color:#fafafa;background:#18181b;border:2px solid #9f1239;border-radius:12px;padding:12px 14px;margin:6px 0 8px">
@@ -457,7 +461,8 @@ function dashShell(inner){
        <div class="tab ${T.tab==="exam"?"on":""}" onclick="dashExam()">📊 회차 통계</div>
        <div class="tab ${T.tab==="students"?"on":""}" onclick="dashStudents()">👥 학생</div>
        <div class="tab ${T.tab==="report"?"on":""}" onclick="dashReport()">📨 학부모 리포트</div>
-       <a class="tab" href="full.html#teacher" style="text-decoration:none;color:inherit">📕 전체 모의고사</a>
+       <a class="tab" href="full.html#teacher" style="text-decoration:none;color:inherit">📕 영어 전체</a>
+       <a class="tab" href="fullk.html#teacher" style="text-decoration:none;color:inherit">📗 국어 전체</a>
      </div>
      ${inner}
    </div>`;
