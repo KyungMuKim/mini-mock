@@ -192,6 +192,13 @@ async function home(){
        <span><b>📗 고3 국어 전체 모의고사</b><br><span class="small">학평·모평 기출 45문항 · 공통+선택(언어와 매체) · 80분</span></span>
        <span style="background:#0f9d8a;color:#fff;border-radius:8px;padding:8px 12px;font-weight:700;white-space:nowrap">풀러 가기 →</span>
      </a>
+     <!-- 진단평가 Retake 배너 (4분기 진단평가 재응시): 2026-11-14 00:00(한국 시간)부터 자동 표시. 끝나면 이 블록만 주석 처리 -->
+     ${Date.now() >= Date.parse("2026-11-14T00:00:00+09:00") ? `
+     <a href="retake.html" style="display:flex;justify-content:space-between;align-items:center;gap:10px;text-decoration:none;color:#1c2333;background:#eff6ff;border:2px solid #93c5fd;border-radius:12px;padding:12px 14px;margin:6px 0 12px">
+       <span><b>📝 진단평가 Retake</b><br><span class="small">4분기 진단평가 31~85번(문법 15 + 독해 40) · 90분 · 답 입력</span></span>
+       <span style="background:#1d4ed8;color:#fff;border-radius:8px;padding:8px 12px;font-weight:700;white-space:nowrap">입력하기 →</span>
+     </a>
+     ` : ""}
      <!-- 2026-10-27 비활성(Dean): 지난 이벤트 배너 2개(Doomsday 10/8, 신남중 가채점 10/6). 페이지(doomsday.html·school.html)는 그대로 — 다시 쓰려면 주석만 풀기
      <a href="doomsday.html" style="display:flex;justify-content:space-between;align-items:center;gap:10px;text-decoration:none;color:#fafafa;background:#18181b;border:2px solid #9f1239;border-radius:12px;padding:12px 14px;margin:6px 0 8px">
        <span><b>⚖️ [Doomsday] 씨앤씨 진단평가 재시험</b><br><span style="font-size:.8rem;color:#a1a1aa">10/8 · 31~85번(문법 15 + 독해 40) 답 입력 · 듣기는 1차 점수 유지</span></span>
