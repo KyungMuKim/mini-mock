@@ -142,6 +142,12 @@ const QNOS = []; for(let n=31;n<=85;n++) QNOS.push(n);
 const NCH = n => ((n>=43&&n<=45)||(n>=58&&n<=69)) ? 5 : 4;
 const CHS = n => Array.from({length:NCH(n)}, (_,i)=>i+1);
 /* 이 페이지는 label에 Retake가 들어간 시험만 사용 (Doomsday 시험과 섞이지 않게) */
+/* 성적표 6개 영역: 영역 점수 = 영역 기본점 + 맞힌 문항 배점 합 (기본점 합 240, 4분기 성적표 10명 전원 검산 일치) */
+const SEC6 = [
+  {name:"듣기 일반", from:1,  to:15, base:30}, {name:"듣기 추론", from:16, to:30, base:50},
+  {name:"문법",      from:31, to:45, base:40}, {name:"독해 일반", from:46, to:57, base:30},
+  {name:"독해 수능", from:58, to:69, base:30}, {name:"독해 추론", from:70, to:85, base:60}
+];
 const pickExam = list => (list||[]).find(e=>/retake/i.test(e.label||"")) || null;
 const esc = s => String(s??"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const f1 = v => (Math.round(Number(v)*10)/10).toFixed(1);
@@ -332,6 +338,14 @@ function analyze(st){
     gr1: secPts(ox1,31,45), rc1: secPts(ox1,46,85),
     f1: cnt(ox1, focus), rest1: cnt(ox1, rest), nFocus: focus.length, nRest: rest.length,
     grc1: cnt(ox1, QNOS.filter(n=>n<=45)), rcc1: cnt(ox1, QNOS.filter(n=>n>=46)) };
+  r.sec6 = SEC6.map(sc=>{
+    const ns = []; for(let n=sc.from;n<=sc.to;n++) ns.push(n);
+    const ok1 = n => st.ox1[n-1]==="O";
+    const ok2 = n => n<=30 ? ok1(n) : (ox2 ? ox2[n-31]==="O" : false);
+    const sumP = f => ns.filter(f).reduce((t,n)=>t+pts(n),0);
+    return { ...sc, n: ns.length, max: sc.base + ns.reduce((t,n)=>t+pts(n),0), lc: sc.to<=30,
+      s1: sc.base + sumP(ok1), c1: ns.filter(ok1).length, s2: sc.base + sumP(ok2), c2: ns.filter(ok2).length };
+  });
   if(a){
     r.score2 = Number(a.score2); r.delta = r.score2 - r.score1;
     r.gr2 = secPts(ox2,31,45); r.rc2 = secPts(ox2,46,85);
@@ -486,12 +500,11 @@ window.report = function(id){
       <span class="delta ${r.delta>0?"up":r.delta<0?"down":"eq"}" style="font-size:1.15rem">${r.delta>0?"+":""}${f1(r.delta)}</span>
     </div>
     <table>
-      <tr><th>영역</th><th class="num">1차</th><th class="num">Retake</th><th class="num">변화</th><th>비고</th></tr>
-      <tr><td>듣기 (1-30)</td><td class="num">${f1(r.lc)}</td><td class="num">${f1(r.lc)}</td><td class="num">-</td><td class="small">1차 결과 유지 (재응시 안 함)</td></tr>
-      <tr><td>문법 (31-45)</td><td class="num">${f1(r.gr1)}</td><td class="num"><b>${f1(r.gr2)}</b></td><td class="num">${r.gr2-r.gr1>=0?"+":""}${f1(r.gr2-r.gr1)}</td><td class="small">${r.grc1} → ${r.grc2}문항 / 15</td></tr>
-      <tr><td>독해 (46-85)</td><td class="num">${f1(r.rc1)}</td><td class="num"><b>${f1(r.rc2)}</b></td><td class="num">${r.rc2-r.rc1>=0?"+":""}${f1(r.rc2-r.rc1)}</td><td class="small">${r.rcc1} → ${r.rcc2}문항 / 40</td></tr>
+      <tr><th>영역</th><th class="num">1차</th><th class="num">Retake</th><th class="num">변화</th><th class="num">만점</th><th>맞힌 문항</th></tr>
+      ${r.sec6.map(x=>`<tr><td>${x.name} <span class="small">(${x.from}~${x.to}번)</span></td><td class="num">${f1(x.s1)}</td><td class="num">${x.lc?f1(x.s2):`<b>${f1(x.s2)}</b>`}</td><td class="num">${x.lc?"-":`<span class="delta ${x.s2-x.s1>0.04?"up":x.s2-x.s1<-0.04?"down":"eq"}" style="font-size:.8rem">${x.s2-x.s1>0.04?"+":""}${f1(x.s2-x.s1)}</span>`}</td><td class="num">${f1(x.max)}</td><td class="small">${x.lc?"1차 결과 유지 (재응시 안 함)":`${x.c1} → ${x.c2}문항 / ${x.n}`}</td></tr>`).join("")}
+      <tr><td><b>합계</b></td><td class="num"><b>${f1(r.score1)}</b></td><td class="num"><b>${f1(r.score2)}</b></td><td class="num"><b>${r.delta>0?"+":""}${f1(r.delta)}</b></td><td class="num">600.0</td><td class="small">문법 ${r.grc1} → ${r.grc2} / 15 · 독해 ${r.rcc1} → ${r.rcc2} / 40</td></tr>
     </table>
-    <p class="small">※ 듣기는 1차 결과를 그대로 두고, 씨앤씨 성적표와 같은 방식(기본 ${f1(T.exam.base_pts)}점 + 맞힌 문항 배점 합)으로 계산했습니다.</p>
+    <p class="small">※ 듣기는 1차 결과를 그대로 두고, 씨앤씨 성적표와 같은 방식(영역별 기본점 + 맞힌 문항 배점 합)으로 계산했습니다. 1차 영역 점수는 성적표의 영역 점수와 같습니다.</p>
 
     <h2>2. 재응시 ${r.nFocus}문항 문항별 비교</h2>
     <div class="kpi">
