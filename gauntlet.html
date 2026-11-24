@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>THE GAUNTLET 정답표</title>
+<style>
+:root{--navy:#0D1B2A;--gold:#C9A227;--red:#C30A15;--cream:#F5F1E8;--line:#d9d4c6}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Malgun Gothic","Apple SD Gothic Neo","Noto Sans KR",sans-serif;background:var(--cream);color:#1b1b1b;line-height:1.5}
+header{background:var(--navy);color:#fff;padding:18px 16px 14px;text-align:center}
+header h1{margin:0;font-size:21px;letter-spacing:.12em}
+header .vol{color:var(--gold);font-weight:700;font-size:15px;margin-top:2px}
+header .sub{font-size:13px;opacity:.85;margin-top:4px}
+main{max-width:560px;margin:0 auto;padding:14px 12px 40px}
+.card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:12px}
+.note{font-size:13.5px;color:#444}
+.pick{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.pick a,.tabs button{display:block;text-align:center;padding:12px 6px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--navy);font-weight:700;text-decoration:none;font-size:15px;font-family:inherit;cursor:pointer}
+.tabs{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:12px}
+.tabs button{padding:10px 0;font-size:14px}
+.tabs button.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+h2{font-size:16px;margin:0 0 10px;color:var(--navy)}
+.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.cell{border:1px solid var(--line);border-radius:8px;padding:6px 0;text-align:center}
+.cell .n{font-size:11.5px;color:#777}
+.cell .a{font-size:19px;font-weight:700;color:var(--navy)}
+.cell.multi .a{color:var(--red);font-size:17px}
+.sa{border-top:1px solid var(--line);padding:9px 0;font-size:14.5px}
+.sa:first-of-type{border-top:0}
+.sa b{color:var(--navy);margin-right:6px}
+.sa span{word-break:keep-all}
+.hide{filter:blur(7px);user-select:none}
+.btn{width:100%;padding:13px;border:0;border-radius:8px;background:var(--gold);color:#1b1b1b;font-weight:700;font-size:15px;font-family:inherit;cursor:pointer}
+footer{text-align:center;font-size:12px;color:#888;margin-top:18px}
+.back{display:inline-block;margin-top:8px;font-size:13px;color:#555}
+</style>
+</head>
+<body>
+<header>
+  <h1>THE GAUNTLET</h1>
+  <div class="vol" id="vol"></div>
+  <div class="sub" id="sub">정답표</div>
+</header>
+<main id="main"></main>
+<script>
+const DATA = {"III":{"sinseo":{"name":"신서중학교","scope":"미래엔 6 · 7단원","sets":[[[2],[3],[1],[5],[3],[4],[3],[1,4],[2],[4],[5],[1],[2],[3],[1],[4],[4],[5],[2,5],[2],[4],[5],[1],[2],[5]],[[4],[2],[5],[1],[3],[2,4],[3],[2,3],[1],[2],[4],[5],[2],[1],[4],[3],[3],[4],[5],[2],[2],[1],[3],[5],[1]],[[3],[4],[2],[2,5],[1],[5],[4],[1,3],[3],[5],[2],[1],[5],[4],[2],[3],[4],[1],[5],[3],[3],[2],[5],[1],[2]],[[3],[5],[4],[3],[2],[5],[1],[2,5],[5],[4],[3],[2],[3],[1],[4],[2],[3],[5],[1],[3,5],[4],[3],[5],[1],[2]],[[2],[3],[4],[2],[1],[1,3],[5],[2,4],[1],[5],[4],[4],[3],[1],[5],[3],[2],[1],[4],[4],[3],[2],[1],[5],[2]],[[5],[3],[2,3],[2],[4],[1],[3],[5],[2,3],[4],[2],[1],[2],[3],[4],[5],[1],[2],[1,4],[4],[5],[3],[2],[4],[1]],[[3],[4],[2],[3],[5],[1],[2],[3,4],[4],[1],[3],[5],[2],[4],[2],[1],[5],[1],[3,5],[3],[4],[1],[2],[3],[5]]]},"mokil":{"name":"목일중학교","scope":"비상 7 · 8과","sets":[[[3],[4],[1],[5],[1],[2,5],[3],[2,4],[2],[3],[5],[2],[3],[1],[2],[5],[4],[5],[4],[1],[4],[3],[1],[2],[4]],[[4],[3],[4],[2],[2],[2,5],[2],[3,4,5],[5],[1],[3],[5],[2],[1],[5],[1],[3],[5],[4],[3],[4],[1],[1],[3],[2]],[[4],[2],[5],[3],[2],[5],[4],[4,5],[2],[3],[3],[2],[2],[4],[1],[1],[5],[5],[3],[3,5],[3],[2],[1],[4],[1]],[[4],[5],[3],[4],[2],[3,4],[2],[2,3],[5],[1],[3],[4],[2],[5],[1],[2],[4],[5],[1],[3],[2],[1],[3],[4],[1]],[[4],[2],[1],[4],[2],[1,3],[3],[1,3,4],[5],[4],[3],[5],[3],[1],[4],[1],[2],[3],[5],[5],[3],[1],[2],[5],[4]],[[2],[3],[2,4],[5],[3],[5],[4],[2],[2,4],[3],[4],[1],[2],[1],[5],[2],[4],[1,3],[4],[3],[3],[1],[2],[1],[5]],[[5],[3],[2],[5],[4],[2],[3],[2,4],[5],[1],[4],[1],[3],[1],[4],[2],[3],[3,5],[2],[1],[4],[1],[2],[3],[5]]]},"sinnam":{"name":"신남중학교","scope":"동아 6 · 7과","ref":"donga67"},"mokdong":{"name":"목동중학교","scope":"동아 6 · 7과","ref":"donga67"},"gwangmyeong":{"name":"광명중학교","scope":"천재 5 ~ 8과","sets":[[[5],[4],[2],[4],[1],[3],[2],[1,2],[3],[5],[1],[3],[4],[2],[1],[3],[2],[4,5],[5],[1],"to enjoying → to enjoy  /  well → good  /  very → much  /  were → was","I think that this omelet is much more delicious than that one.","(1) I'm going to visit the art museum to see Matisse's paintings.  (2) Looking at paintings is more interesting than watching movies.","(1) Were there many giant omelets at the festival?  (2) Mom doesn't want to take a walk along the coast.","(1) looks like  (2) smaller, chewier"],[[1],[5],[2],[4],[3],[5],[5],[3,4],[1],[5],[3],[2],[3,5],[4],[1],[3],[1],[2],[4],[2],"sadly → sad  /  was → were  /  to talk → talking  /  more bigger → bigger","When you visit the gallery, you will enjoy looking at many paintings.","(1) When Minho saw me without an umbrella  (2) I want to say thank you to Minho","(1) There wasn't any juice in the bottle.  (2) I didn't think that the omelet tasted good.","(1) It looks like pancakes.  (2) Hotteok is sweeter than pancakes."],[[2],[5],[1],[5],[1],[3],[3],[3,5],[5],[2],[1],[3],[4],[2,4],[1],[4],[4],[2],[3],[2],"(1) was → were (2) very → much (3) to eat → eating (4) helping → to help","Mom kept walking to find a cheaper scarf.","(1) check the Lost & Found (2) he finds it","(1) When the rain stops, we will go out. (2) Dad turned on the TV to watch the news.","There are many places for enjoying nature in Yeosu."],[[5],[2],[5],[4],[1],[3,4],[3],[2,4,5],[1],[2],[3],[4],[3],[4],[2],[1],[4],[5],[1],[2],"(1) cook → cooking (2) nicely → nice (3) more good → better (4) are → is","When I go to Tongyeong, I will visit Dongpirang to take pictures.","(1) I don't think that it is scary. (2) it looks like a cute cat to me.","(1) I think that your bag looks much heavier than mine. (2) When we arrived at the park, there were many people.","(1) You add carrots and cheese. (2) The last step is folding the omelet in half."],[[5],[4],[1],[5],[2],[2,4],[3],[1,3,5],[4],[2],[1],[5],[2],[2],[2],[1],[3],[3],[4],[1],"Is there → Are there  /  want trying → want to try  /  for use → for using  /  more cheap → cheaper","I think that making new friends is really exciting.","(1) This headache is worse than a cold.  (2) I hope that you feel better soon.","(1) It is not easy to take pictures here.  (2) Did the museum look older than the temple?","Sora's omelet tastes better with carrots and cheese."],[[3],[5],[3,5],[2],[4],[5],[4],[3],[1,4],[4],[2],[1],[5],[1],[4],[2],[5],[2,4],[1],[3],"smelled sweetly → smelled sweet  /  Choose → Choosing  /  much cheap → much cheaper  /  enjoyed to talk → enjoyed talking","When I finished doing my homework, Mom was cooking dinner.","I know that that boy is Mina's brother","(1) My bag is smaller than Tom's.  (2) Ben practices every day to be a good magician.","(1) She is going to visit Odongdo to take pictures of the sea.  (2) She thinks that it will be fun."],[[2],[5],[1],[3],[4],[2],[3],[2,4,5],[5],[1],[4],[3],[4],[5],[2],[1],[4],[2,4],[2],[5],"is → are / more better → better / to making → to make / to read → reading","When you add cheese, the omelet will smell much more delicious.","(1) to write (2) his trip was (3) to remember","(1) Was there a small museum near the market? - No, there wasn't. (2) We will visit another gallery when the exhibition ends.","(1) taking a walk (2) are huge rocks"]]},"donga67":{"hidden":true,"sets":[[[3],[1],[2],[5],[4],[4],[3],[3,5],[3],[1],[4],[2],[1],[2],[2],[5],[5],[3],[4,5],[4],"to helping → to help  /  easy carry → easy to carry  /  will finish → finish  /  hope see → hope to see","When Max gets too excited, Jennifer will use hand signals to calm him.","I want to make airplanes when I grow up.","(1) After Peter arrives at the beach, he will fly the drones.  (2) Anna visits many beaches to take pictures of them.  (3) It is not easy to carry this heavy box alone.","Minsu thinks that it is cool to use the points like money."],[[2],[4],[3],[1],[5],[5],[2],[1,4],[1],[4],[2],[1],[3],[5],[1],[2],[3],[4],[3,5],[3],"To learning → To learn  /  will go → go  /  is make → is to make  /  happy hear → happy to hear","I know that you study hard to become a pilot.","(1) wanted to buy a new one  (2) I decided to fix it and reuse it","(1) I didn't think that Emma used single-use plastic.  (2) Minsu decided not to take the bottles to the machine.","(1) She joined a plogging club to help the Earth.  (2) She wants to be a scientist when she grows up."],[[2],[4],[1],[3,5],[1],[3],[3],[3,4],[2],[5],[4],[1],[2],[5],[4],[3],[5],[1],[4],[5],"is make → is to make  /  for buy → to buy  /  are → is  /  to cooks → to cook","When I get home, I will turn off the air conditioner to save energy.","(1) to take pictures of  (2) wants to be","(1) I didn't know that the air conditioner was on.  (2) He will play soccer after he finishes his homework. (= After he finishes his homework, he will play soccer.)","practice hard every day to become"],[[5],[1],[4],[3],[2],[4],[3],[1,3],[5],[1],[3],[2],[4],[1],[2],[5],[4],[3],[4,5],[1],"for help → to help  /  is clean → is to clean  /  need bringing → need to bring  /  are → is","I was surprised to learn that we produce too much waste.","(1) can you please fix my bag?  (2) can you fix it after you finish dinner?","(1) We decided to reuse leftovers to reduce food waste.  (2) Please finish your homework before you watch TV.","(1) He used rice and a plastic container.  (2) He creates sound effects in his studio when recording on location is not easy."],[[5],[3],[1],[2],[4],[1,4],[3],[1,4],[4],[5],[1],[4],[5],[5],[1],[2],[2],[4],[2],[3],"decided making → decided to make  /  happy eat → happy to eat  /  cook → cooking(to cook)  /  dream share → dream to share","Ben decided not to take long showers to save water.","(1) I joined the photo club to be a photographer.  (2) Can you please open the door before I carry these boxes?","(1) Dad fixes my bag after he cooks dinner.  (2) Dad will cook dinner before he fixes my bag.","she made a nice lunch out of leftovers"],[[5],[2],[2,4],[2],[4],[5],[3],[3],[2,5],[3],[4],[1],[4],[1],[1],[2,5],[4],[5],[3],[2],"for meet → to meet  /  hope becoming → hope to become  /  will have → have  /  fun make → fun to make","I think that you can be a great chef when you grow up.","We need to reduce plastic waste to save the Earth. (추가한 단어: to)","(1) After Tony read the book, he watched the movie.  (2) Mina went to the bakery to buy some bread.","(1) It begins after the shooting is over.  (2) He used them to make the sound of waves."],[[4],[2],[3],[5],[1],[2],[3],[2,4],[4],[5],[2],[1],[4],[2],[5],[3],[3],[1],[2,3],[1],"is become → is to become  /  decided studying → decided to study  /  for learn → to learn  /  will grow → grow","After the shooting is over, we will go to the beach to pick up trash.","(1) she is interested in cooking  (2) she wants to be a chef","(1) After Mom comes home, we will eat dinner.  (2) Mom will come home before we eat dinner.","(1) to save the Earth  (2) that small actions are important"]]}}};
+const CIRC = ['','①','②','③','④','⑤'];
+const qs = new URLSearchParams(location.search);
+let vol = (qs.get('v') || '').toUpperCase();
+const VOLMAP = {'1':'I','2':'II','3':'III','4':'IV','5':'V'};
+if (VOLMAP[vol]) vol = VOLMAP[vol];
+const school = (qs.get('s') || '').toLowerCase();
+const main = document.getElementById('main');
+const el = (t, c, h) => { const e = document.createElement(t); if (c) e.className = c; if (h !== undefined) e.innerHTML = h; return e; };
+const esc = s => String(s).replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));
+
+function pickVolume() {
+  document.getElementById('vol').textContent = '2026학년도 2학기 기말';
+  const c = el('div', 'card'); c.appendChild(el('h2', '', '권을 골라 주세요'));
+  const p = el('div', 'pick');
+  Object.keys(DATA).forEach(v => { const a = el('a', '', 'THE GAUNTLET ' + v); a.href = '?v=' + v; p.appendChild(a); });
+  c.appendChild(p); main.appendChild(c);
+}
+function pickSchool() {
+  document.getElementById('vol').textContent = vol + ' · 2026학년도 2학기 기말';
+  const c = el('div', 'card'); c.appendChild(el('h2', '', '학교를 골라 주세요'));
+  const p = el('div', 'pick');
+  Object.entries(DATA[vol]).forEach(([k, s]) => { if (s.hidden) return; const a = el('a', '', s.name); a.href = '?s=' + k + '&v=' + vol; p.appendChild(a); });
+  c.appendChild(p); main.appendChild(c);
+}
+function show() {
+  const S = DATA[vol][school];
+  const sets = S.sets || DATA[vol][S.ref].sets;
+  document.getElementById('vol').textContent = vol + ' · ' + S.name;
+  document.getElementById('sub').textContent = '정답표 · ' + S.scope + ' 통합 · 실전 TEST ' + sets.length + '회분';
+  const info = el('div', 'card note', '문제를 <b>끝까지 다 푼 뒤에</b> 회차를 눌러 채점하세요. 틀린 문항은 답만 고치지 말고, 왜 그 답인지 같은 학교 크루와 먼저 이야기해 보세요.');
+  main.appendChild(info);
+  const tabs = el('div', 'tabs'); main.appendChild(tabs);
+  const body = el('div'); main.appendChild(body);
+  function render(i) {
+    [...tabs.children].forEach((b, j) => b.classList.toggle('on', j === i));
+    body.innerHTML = '';
+    const ans = sets[i];
+    const wrap = el('div', 'card');
+    wrap.appendChild(el('h2', '', '실전 TEST ' + (i + 1) + '회'));
+    const gate = el('button', 'btn', (i + 1) + '회를 다 풀었어요 · 정답 보기');
+    const inner = el('div', 'hide');
+    const obj = ans.map((a, k) => ({ a, n: k + 1 })).filter(x => Array.isArray(x.a));
+    const sa = ans.map((a, k) => ({ a, n: k + 1 })).filter(x => !Array.isArray(x.a));
+    const g = el('div', 'grid');
+    obj.forEach(x => { const c = el('div', 'cell' + (x.a.length > 1 ? ' multi' : '')); c.appendChild(el('div', 'n', x.n + '번')); c.appendChild(el('div', 'a', x.a.map(v => CIRC[v]).join(''))); g.appendChild(c); });
+    inner.appendChild(g);
+    if (obj.some(x => x.a.length > 1)) inner.appendChild(el('div', 'note', '<br>빨간색은 정답이 두 개 이상인 문항이에요. 모두 맞아야 정답이에요.'));
+    if (sa.length) {
+      const sc = el('div'); sc.style.marginTop = '14px';
+      sc.appendChild(el('h2', '', '서술형 모범답안'));
+      sa.forEach(x => sc.appendChild(el('div', 'sa', '<b>' + x.n + '번</b><span>' + esc(x.a) + '</span>')));
+      sc.appendChild(el('div', 'note', '<br>뜻과 조건이 맞는 다른 답은 선생님께 확인받으세요.'));
+      inner.appendChild(sc);
+    }
+    gate.onclick = () => { inner.classList.remove('hide'); gate.remove(); };
+    wrap.appendChild(gate); wrap.appendChild(el('div', '', '&nbsp;')); wrap.appendChild(inner);
+    body.appendChild(wrap);
+  }
+  sets.forEach((_, i) => { const b = el('button', '', (i + 1) + '회'); b.onclick = () => render(i); tabs.appendChild(b); });
+  render(0);
+  const f = el('footer', '', '씨앤씨 · 중1 스탠포드반<br>'); const a = el('a', 'back', '다른 학교 · 다른 권 보기'); a.href = location.pathname; f.appendChild(a); main.appendChild(f);
+}
+if (!DATA[vol]) pickVolume();
+else if (!DATA[vol][school] || DATA[vol][school].hidden) pickSchool();
+else show();
+</script>
+</body>
+</html>
